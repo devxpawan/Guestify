@@ -10,11 +10,26 @@
 </head>
 <body>
 <?php if (isset($_SESSION['user_id'])): ?>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg top-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand" href="<?= $base_url ?>dashboard.php">Villa Reservation</a>
-        <div class="navbar-nav ms-auto">
-            <span class="navbar-text me-3">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> (<?php echo $_SESSION['role']; ?>)</span>
+        <button class="btn" id="menu-toggle"><i class="bi bi-list fs-5"></i></button>
+        <div class="ms-auto">
+            <div class="dropdown">
+                <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div class="text-start">
+                        <div class="fw-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($_SESSION['username']) ?></div>
+                        <div class="badge bg-primary bg-opacity-10 text-primary"><?= $_SESSION['role'] ?></div>
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="<?= $base_url ?>modules/profile/index.php"><i class="bi bi-person-gear me-2"></i>Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="<?= $base_url ?>logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>

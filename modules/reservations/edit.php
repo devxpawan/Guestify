@@ -22,15 +22,15 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customer_id = (int)$_POST['customer_id'];
     $room_id = (int)$_POST['room_id'];
-    $check_in = mysqli_real_escape_string($conn, $_POST['check_in']);
-    $check_out = mysqli_real_escape_string($conn, $_POST['check_out']);
+    $check_in = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_in']));
+    $check_out = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_out']));
     $adults = (int)$_POST['adults'];
     $children = (int)$_POST['children'];
     $status = mysqli_real_escape_string($conn, $_POST['status']);
 
-    $overlap = mysqli_query($conn, "SELECT id FROM reservations WHERE room_id=$room_id AND id != $id AND status NOT IN ('Cancelled','Checked-Out') AND ((check_in <= '$check_out' AND check_out >= '$check_in'))");
+    $overlap = mysqli_query($conn, "SELECT id FROM reservations WHERE room_id=$room_id AND id != $id AND status NOT IN ('Cancelled','Checked-Out') AND (check_in < '$check_out' AND check_out > '$check_in')");
     if (mysqli_num_rows($overlap) > 0) {
-        $error = 'Room is not available for the selected dates!';
+        $error = 'Room is not available for the selected time slot!';
     } else {
         $query = "UPDATE reservations SET customer_id=$customer_id, room_id=$room_id, check_in='$check_in', 
                   check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id";
@@ -72,11 +72,11 @@ include '../../includes/sidebar.php';
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Check-In</label>
-                        <input type="date" name="check_in" class="form-control" value="<?= $res['check_in'] ?>" required>
+                        <input type="datetime-local" name="check_in" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($res['check_in'])) ?>" required>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Check-Out</label>
-                        <input type="date" name="check_out" class="form-control" value="<?= $res['check_out'] ?>" required>
+                        <input type="datetime-local" name="check_out" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($res['check_out'])) ?>" required>
                     </div>
                 </div>
                 <div class="row">

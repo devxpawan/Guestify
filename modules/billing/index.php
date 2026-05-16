@@ -17,13 +17,19 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                                  ORDER BY i.id DESC");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <div class="d-flex justify-content-between mb-3">
-        <h2>Billing & Invoices</h2>
-        <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Invoice</a>
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2><i class="bi bi-receipt"></i> Billing & Invoices</h2>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage invoices and payment tracking</p>
+            </div>
+            <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Invoice</a>
+        </div>
     </div>
-    <div class="card">
-        <div class="card-body">
-            <table class="table table-striped">
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Invoice #</th><th>Customer</th><th>Room Charges</th><th>Product Charges</th><th>Tax</th><th>Discount</th><th>Total</th><th>Payment</th><th>Actions</th>
@@ -32,22 +38,31 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                 <tbody>
                     <?php while ($inv = mysqli_fetch_assoc($invoices)): ?>
                     <tr>
-                        <td><?= $inv['id'] ?></td>
-                        <td><?= htmlspecialchars($inv['full_name']) ?></td>
+                        <td><strong>#<?= $inv['id'] ?></strong></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <?= htmlspecialchars($inv['full_name']) ?>
+                            </div>
+                        </td>
                         <td>$<?= number_format($inv['room_charges'], 2) ?></td>
                         <td>$<?= number_format($inv['product_charges'], 2) ?></td>
                         <td>$<?= number_format($inv['tax'], 2) ?></td>
-                        <td>$<?= number_format($inv['discount'], 2) ?></td>
-                        <td><strong>$<?= number_format($inv['grand_total'], 2) ?></strong></td>
+                        <td class="text-success">-$<?= number_format($inv['discount'], 2) ?></td>
+                        <td><strong class="text-primary">$<?= number_format($inv['grand_total'], 2) ?></strong></td>
                         <td>
-                            <span class="badge bg-<?= $inv['payment_status'] == 'Paid' ? 'success' : ($inv['payment_status'] == 'Partial' ? 'warning' : 'danger') ?>">
-                                <?= $inv['payment_status'] ?>
+                            <span class="badge badge-<?= $inv['payment_status'] == 'Paid' ? 'success' : ($inv['payment_status'] == 'Partial' ? 'warning' : 'danger') ?>">
+                                <i class="bi bi-<?= $inv['payment_status'] == 'Paid' ? 'check-circle' : ($inv['payment_status'] == 'Partial' ? 'clock' : 'x-circle') ?>"></i> <?= $inv['payment_status'] ?>
                             </span>
                         </td>
                         <td>
-                            <a href="view.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-info">View</a>
-                            <a href="payments.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-success">Pay</a>
-                            <a href="print.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-secondary" target="_blank">Print</a>
+                            <div class="action-btns">
+                                <a href="view.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
+                                <a href="payments.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-success" title="Pay"><i class="bi bi-credit-card"></i></a>
+                                <a href="print.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-secondary" target="_blank" title="Print"><i class="bi bi-printer"></i></a>
+                            </div>
                         </td>
                     </tr>
                     <?php endwhile; ?>

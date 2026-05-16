@@ -18,65 +18,63 @@ $recent = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check
                                ORDER BY r.id DESC LIMIT 5");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <h2 class="mb-4">Dashboard</h2>
+    <div class="page-header">
+        <h2><i class="bi bi-grid-1x2"></i> Dashboard</h2>
+        <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Welcome back, <?= htmlspecialchars($_SESSION['username']) ?>! Here's your overview.</p>
+    </div>
+
     <div class="row">
-        <div class="col-md-3 mb-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><?= $room_count ?></h5>
-                    <p>Total Rooms</p>
-                </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card primary">
+                <div class="stat-icon"><i class="bi bi-building"></i></div>
+                <div class="stat-value"><?= $room_count ?></div>
+                <div class="stat-label">Total Rooms</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><?= $reservation_count ?></h5>
-                    <p>Total Reservations</p>
-                </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card success">
+                <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-value"><?= $reservation_count ?></div>
+                <div class="stat-label">Reservations</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><?= $customer_count ?></h5>
-                    <p>Total Customers</p>
-                </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card info">
+                <div class="stat-icon"><i class="bi bi-people"></i></div>
+                <div class="stat-value"><?= $customer_count ?></div>
+                <div class="stat-label">Customers</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <h5 class="card-title">$<?= number_format($revenue, 2) ?></h5>
-                    <p>Total Revenue</p>
-                </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card warning">
+                <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+                <div class="stat-value">$<?= number_format($revenue, 2) ?></div>
+                <div class="stat-label">Revenue</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="stat-card danger">
+                <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+                <div class="stat-value"><?= $pending ?></div>
+                <div class="stat-label">Pending Reservations</div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="stat-card purple">
+                <div class="stat-icon"><i class="bi bi-box-arrow-in-right"></i></div>
+                <div class="stat-value"><?= $checked_in ?></div>
+                <div class="stat-label">Checked-In Guests</div>
             </div>
         </div>
     </div>
 
     <div class="row mt-2">
-        <div class="col-md-6 mb-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><?= $pending ?></h5>
-                    <p>Pending Reservations</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-3">
-            <div class="card bg-secondary text-white">
-                <div class="card-body">
-                    <h5 class="card-title"><?= $checked_in ?></h5>
-                    <p>Checked-In Guests</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header"><h5>Revenue Trend (Last 6 Months)</h5></div>
+                <div class="card-header"><h5><i class="bi bi-graph-up"></i> Revenue Trend (Last 6 Months)</h5></div>
                 <div class="card-body">
                     <canvas id="revenueChart" style="max-height: 300px;"></canvas>
                 </div>
@@ -85,27 +83,29 @@ $recent = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check
     </div>
 
     <div class="card mt-4">
-        <div class="card-header"><h5>Recent Reservations</h5></div>
-        <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th><th>Customer</th><th>Room</th><th>Check-In</th><th>Check-Out</th><th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($r = mysqli_fetch_assoc($recent)): ?>
-                    <tr>
-                        <td><?= $r['id'] ?></td>
-                        <td><?= htmlspecialchars($r['full_name']) ?></td>
-                        <td><?= $r['room_number'] ?></td>
-                        <td><?= $r['check_in'] ?></td>
-                        <td><?= $r['check_out'] ?></td>
-                        <td><span class="badge bg-<?= $r['status'] == 'Confirmed' ? 'success' : ($r['status'] == 'Pending' ? 'warning' : ($r['status'] == 'Checked-In' ? 'info' : 'secondary')) ?>"><?= $r['status'] ?></span></td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+        <div class="card-header"><h5><i class="bi bi-clock"></i> Recent Reservations</h5></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Customer</th><th>Room</th><th>Check-In</th><th>Check-Out</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($r = mysqli_fetch_assoc($recent)): ?>
+                        <tr>
+                            <td><strong><?= $r['id'] ?></strong></td>
+                            <td><?= htmlspecialchars($r['full_name']) ?></td>
+                            <td><?= $r['room_number'] ?></td>
+                            <td><?= $r['check_in'] ?></td>
+                            <td><?= $r['check_out'] ?></td>
+                            <td><span class="badge badge-<?= $r['status'] == 'Confirmed' ? 'success' : ($r['status'] == 'Pending' ? 'warning' : ($r['status'] == 'Checked-In' ? 'info' : 'secondary')) ?>"><?= $r['status'] ?></span></td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -130,16 +130,29 @@ new Chart(ctx, {
         datasets: [{
             label: 'Revenue ($)',
             data: <?= json_encode($totals) ?>,
-            borderColor: '#0d6efd',
-            tension: 0.1,
+            borderColor: '#6366f1',
+            tension: 0.4,
             fill: true,
-            backgroundColor: 'rgba(13, 110, 253, 0.1)'
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            pointBackgroundColor: '#6366f1',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4
         }]
     },
     options: {
         responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
         scales: {
-            y: { beginAtZero: true }
+            y: { 
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
         }
     }
 });

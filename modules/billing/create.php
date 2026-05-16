@@ -42,6 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Add Room Service orders
+        $service_orders = mysqli_query($conn, "SELECT * FROM service_orders WHERE reservation_id = $reservation_id AND status != 'Cancelled'");
+        while ($so = mysqli_fetch_assoc($service_orders)) {
+            $product_charges += $so['quantity'] * $so['price'];
+        }
+
         $tax = $tax_pct / 100 * ($room_charges + $product_charges);
         $grand_total = $room_charges + $product_charges + $tax - $discount;
 
@@ -61,6 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         mysqli_query($conn, "UPDATE products SET quantity = quantity - $qty WHERE id=$pid");
                     }
                 }
+            }
+
+            // Transfer Service Orders to Invoice Items
+            $service_orders = mysqli_query($conn, "SELECT so.*, p.product_name FROM service_orders so JOIN products p ON so.product_id = p.id WHERE so.reservation_id = $reservation_id AND so.status != 'Cancelled'");
+            while ($so = mysqli_fetch_assoc($service_orders)) {
+                $total = $so['quantity'] * $so['price'];
+                mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total)");
             }
 
             $success = 'Invoice created successfully!';

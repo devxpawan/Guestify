@@ -40,79 +40,77 @@ include "../../includes/header.php";
 include "../../includes/sidebar.php";
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <div class="d-flex justify-content-between mb-3">
-        <h2>Booking Calendar</h2>
-        <div>
-            <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>" class="btn btn-outline-secondary btn-sm">&lt; Prev</a>
-            <span class="mx-3 fw-bold"><?= date('F Y', $first_day) ?></span>
-            <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>" class="btn btn-outline-secondary btn-sm">Next &gt;</a>
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2><i class="bi bi-calendar3"></i> Booking Calendar</h2>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Visual overview of reservations for <?= date('F Y', $first_day) ?></p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i> Prev</a>
+                <span class="mx-2 fw-bold" style="font-size: 1.1rem;"><?= date('F Y', $first_day) ?></span>
+                <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>" class="btn btn-outline-secondary btn-sm">Next <i class="bi bi-chevron-right"></i></a>
+                <a href="index.php" class="btn btn-primary ms-2"><i class="bi bi-list-ul"></i> Back to List</a>
+            </div>
         </div>
-        <a href="index.php" class="btn btn-primary">Back to List</a>
     </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            <table class="table table-bordered mb-0 calendar-table">
-                <thead>
-                    <tr class="bg-light text-center">
-                        <th style="width: 14.28%">Sun</th>
-                        <th style="width: 14.28%">Mon</th>
-                        <th style="width: 14.28%">Tue</th>
-                        <th style="width: 14.28%">Wed</th>
-                        <th style="width: 14.28%">Thu</th>
-                        <th style="width: 14.28%">Fri</th>
-                        <th style="width: 14.28%">Sat</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                    <?php
-                    for ($i = 0; $i < $day_of_week; $i++) {
-                        echo "<td></td>";
-                    }
+    <div class="table-container">
+        <table class="table calendar-table mb-0">
+            <thead>
+                <tr class="text-center">
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                <?php
+                for ($i = 0; $i < $day_of_week; $i++) {
+                    echo "<td class='bg-light'></td>";
+                }
 
-                    for ($day = 1; $day <= $days_in_month; $day++) {
-                        if (($i + $day - 1) % 7 == 0 && $day > 1) {
-                            echo "</tr><tr>";
-                        }
-                        
-                        $current_date = sprintf('%04d-%02d-%02d', $year, $month, $day);
-                        $is_today = ($current_date == date('Y-m-d')) ? 'bg-info bg-opacity-10' : '';
-                        
-                        echo "<td class='$is_today' style='height: 120px; vertical-align: top;'>";
-                        echo "<div class='fw-bold mb-1'>$day</div>";
-                        
-                        foreach ($calendar_events as $event) {
-                            if ($current_date >= $event['check_in'] && $current_date < $event['check_out']) {
-                                $status_class = 'bg-primary';
-                                if ($event['status'] == 'Pending') $status_class = 'bg-warning';
-                                if ($event['status'] == 'Checked-In') $status_class = 'bg-info';
-                                if ($event['status'] == 'Cancelled') $status_class = 'bg-danger';
-                                
-                                echo "<div class='badge $status_class d-block text-start mb-1 overflow-hidden' style='font-size: 10px; cursor: pointer;' onclick='location.href=\"edit.php?id={$event['id']}\"'>";
-                                echo "Rm {$event['room_number']}: " . htmlspecialchars($event['full_name']);
-                                echo "</div>";
-                            }
-                        }
-                        
-                        echo "</td>";
+                for ($day = 1; $day <= $days_in_month; $day++) {
+                    if (($i + $day - 1) % 7 == 0 && $day > 1) {
+                        echo "</tr><tr>";
                     }
+                    
+                    $current_date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                    $is_today = ($current_date == date('Y-m-d'));
+                    
+                    echo "<td class='" . ($is_today ? 'today' : '') . "'>";
+                    echo "<div class='day-number'>" . ($is_today ? "<span>$day</span>" : $day) . "</div>";
+                    
+                    foreach ($calendar_events as $event) {
+                        if ($current_date >= $event['check_in'] && $current_date < $event['check_out']) {
+                            $status_class = 'confirmed';
+                            if ($event['status'] == 'Pending') $status_class = 'pending';
+                            if ($event['status'] == 'Checked-In') $status_class = 'checked-in';
+                            if ($event['status'] == 'Cancelled') $status_class = 'cancelled';
+                            
+                            echo "<div class='calendar-event $status_class' onclick='location.href=\"edit.php?id={$event['id']}\"' title='" . htmlspecialchars($event['full_name']) . " - Room {$event['room_number']}'>";
+                            echo "<i class='bi bi-door-closed me-1'></i>{$event['room_number']}: " . htmlspecialchars($event['full_name']);
+                            echo "</div>";
+                        }
+                    }
+                    
+                    echo "</td>";
+                }
 
-                    while (($i + $day - 1) % 7 != 0) {
-                        echo "<td></td>";
-                        $i++;
-                    }
-                    ?>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                while (($i + $day - 1) % 7 != 0) {
+                    echo "<td class='bg-light'></td>";
+                    $i++;
+                }
+                ?>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
-
-<style>
-    .calendar-table td { border: 1px solid #dee2e6; }
-    .calendar-table thead th { padding: 10px; }
-</style>
 
 <?php include "../../includes/footer.php"; ?>

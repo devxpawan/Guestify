@@ -4,23 +4,51 @@ require_once '../../config/database.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
-$rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id ORDER BY r.id DESC");
+$type_id = isset($_GET['type_id']) ? (int)$_GET['type_id'] : 0;
+$where_clause = "";
+$filter_name = "";
+
+if ($type_id > 0) {
+    $where_clause = " WHERE r.room_type_id = $type_id ";
+    $type_res = mysqli_query($conn, "SELECT type_name FROM room_types WHERE id = $type_id");
+    if ($t_row = mysqli_fetch_assoc($type_res)) {
+        $filter_name = $t_row['type_name'];
+    }
+}
+
+$rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id $where_clause ORDER BY r.id DESC");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <div class="d-flex justify-content-between mb-3">
-        <h2>Room Management</h2>
-        <div>
-            <?php if (has_role(['Admin'])): ?>
-            <a href="types.php" class="btn btn-outline-secondary me-2"><i class="bi bi-tags"></i> Manage Types</a>
-            <?php endif; ?>
-            <?php if (has_role(['Admin', 'Receptionist'])): ?>
-            <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Room</a>
-            <?php endif; ?>
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2><i class="bi bi-building"></i> Room Management</h2>
+                <?php if ($filter_name): ?>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="index.php" class="text-decoration-none">All Rooms</a></li>
+                        <li class="breadcrumb-item active">Type: <?= $filter_name ?></li>
+                    </ol>
+                </nav>
+                <?php endif; ?>
+            </div>
+            <div class="d-flex gap-2">
+                <?php if ($type_id > 0): ?>
+                    <a href="index.php" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i> Clear Filter</a>
+                <?php endif; ?>
+                <?php if (has_role(['Admin'])): ?>
+                <a href="types.php" class="btn btn-outline-secondary"><i class="bi bi-tags"></i> Manage Types</a>
+                <?php endif; ?>
+                <?php if (has_role(['Admin', 'Receptionist'])): ?>
+                <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Room</a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
-    <div class="card">
-        <div class="card-body">
-            <table class="table table-striped">
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Image</th><th>Room No.</th><th>Type</th><th>Capacity</th><th>Price/Night</th><th>Status</th><th>Actions</th>
@@ -31,25 +59,27 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
                     <tr>
                         <td>
                             <?php if ($row['image']): ?>
-                                <img src="../../assets/images/rooms/<?= $row['image'] ?>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                                <img src="../../assets/images/rooms/<?= $row['image'] ?>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                             <?php else: ?>
-                                <div class="bg-light border text-center" style="width: 50px; height: 50px; line-height: 50px; font-size: 10px;">No Img</div>
+                                <div class="bg-light border text-center d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 8px; font-size: 10px; color: #94a3b8;">No Img</div>
                             <?php endif; ?>
                         </td>
-                        <td><?= htmlspecialchars($row['room_number']) ?></td>
+                        <td><strong><?= htmlspecialchars($row['room_number']) ?></strong></td>
                         <td><?= $row['type_name'] ?></td>
-                        <td><?= $row['capacity'] ?></td>
-                        <td>$<?= number_format($row['price'], 2) ?></td>
+                        <td><span class="badge badge-secondary"><?= $row['capacity'] ?> <i class="bi bi-person"></i></span></td>
+                        <td><strong>$<?= number_format($row['price'], 2) ?></strong></td>
                         <td>
-                            <span class="badge bg-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?>">
-                                <?= $row['status'] ?>
+                            <span class="badge badge-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?>">
+                                <i class="bi bi-<?= $row['status'] == 'Available' ? 'check-circle' : ($row['status'] == 'Occupied' ? 'x-circle' : 'clock') ?>"></i> <?= $row['status'] ?>
                             </span>
                         </td>
                         <td>
-                            <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                            <?php if (has_role(['Admin'])): ?>
-                            <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
-                            <?php endif; ?>
+                            <div class="action-btns">
+                                <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                <?php if (has_role(['Admin'])): ?>
+                                <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="bi bi-trash"></i></a>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endwhile; ?>

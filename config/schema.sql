@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS reservations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     room_id INT NOT NULL,
-    check_in DATE NOT NULL,
-    check_out DATE NOT NULL,
+    check_in DATETIME NOT NULL,
+    check_out DATETIME NOT NULL,
     adults INT DEFAULT 1,
     children INT DEFAULT 0,
     status ENUM('Pending', 'Confirmed', 'Checked-In', 'Checked-Out', 'Cancelled') DEFAULT 'Pending',
@@ -115,4 +115,15 @@ INSERT INTO user_roles (role_name) VALUES ('Admin'), ('Receptionist'), ('Cashier
 INSERT INTO users (username, password, role_id, status) VALUES
 ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 1);
 
-INSERT INTO room_types (type_name) VALUES ('Deluxe'), ('Standard'), ('Suite');
+CREATE TABLE IF NOT EXISTS service_orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reservation_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    status ENUM('Pending', 'Served', 'Cancelled') DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reservation_id) REFERENCES reservations(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+

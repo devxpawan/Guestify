@@ -41,14 +41,18 @@ include "../../includes/header.php";
 include "../../includes/sidebar.php";
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <h2 class="mb-4">Profile Settings</h2>
-    <?php if (isset($error)): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if (isset($success)): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+    <div class="page-header">
+        <h2><i class="bi bi-person-circle"></i> Profile Settings</h2>
+        <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage your account information and security</p>
+    </div>
+
+    <?php if (isset($error)): ?><div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><?= $error ?></div><?php endif; ?>
+    <?php if (isset($success)): ?><div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $success ?></div><?php endif; ?>
     
     <div class="row">
         <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header"><h5>Update Profile</h5></div>
+            <div class="profile-card mb-3">
+                <div class="card-header"><h5><i class="bi bi-person-gear"></i> Update Profile</h5></div>
                 <div class="card-body">
                     <form method="POST">
                         <div class="mb-3">
@@ -57,39 +61,45 @@ include "../../includes/sidebar.php";
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <input type="text" class="form-control" value="<?= $role["role_name"] ?>" readonly>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                                <input type="text" class="form-control" value="<?= $role["role_name"] ?>" readonly>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Status</label>
-                            <input type="text" class="form-control" value="<?= $user["status"] ? "Active" : "Inactive" ?>" readonly>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-<?= $user["status"] ? 'check-circle text-success' : 'x-circle text-danger' ?>"></i></span>
+                                <input type="text" class="form-control" value="<?= $user["status"] ? "Active" : "Inactive" ?>" readonly>
+                            </div>
                         </div>
-                        <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
+                        <button type="submit" name="update_profile" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Profile</button>
                     </form>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header"><h5>Change Password</h5></div>
+            <div class="profile-card">
+                <div class="card-header"><h5><i class="bi bi-lock"></i> Change Password</h5></div>
                 <div class="card-body">
                     <form method="POST">
                         <div class="mb-3">
                             <label class="form-label">Current Password</label>
-                            <input type="password" name="current_password" class="form-control" required>
+                            <input type="password" name="current_password" class="form-control" placeholder="Enter current password" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">New Password</label>
-                            <input type="password" name="new_password" class="form-control" required>
+                            <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Confirm New Password</label>
-                            <input type="password" name="confirm_password" class="form-control" required>
+                            <input type="password" name="confirm_password" class="form-control" placeholder="Confirm new password" required>
                         </div>
-                        <button type="submit" name="change_password" class="btn btn-warning">Change Password</button>
+                        <button type="submit" name="change_password" class="btn btn-warning"><i class="bi bi-key"></i> Change Password</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<?php include "../includes/footer.php"; ?>
+<?php include "../../includes/footer.php"; ?>
