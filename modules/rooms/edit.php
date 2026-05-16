@@ -1,0 +1,123 @@
+<?php
+require_once '../../includes/session.php';
+require_once '../../config/database.php';
+
+if (!has_role(['Admin', 'Receptionist'])) {
+    header('Location: index.php');
+    exit();
+}
+
+$id = (int)$_GET['id'];
+$room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id"));
+if (!$room) {
+    header('Location: index.php');
+    exit();
+}
+
+$types = mysqli_query($conn, "SELECT * FROM room_types");
+$error = '';
+$success = '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $room_number = mysqli_real_escape_string($conn, $_POST['room_number']);
+        $room_type_id = (int)$_POST['room_type_id'];
+        $capacity = (int)$_POST['capacity'];
+        $price = (float)$_POST['price'];
+        $status = mysqli_real_escape_string($conn, $_POST['status']);
+        $description = mysqli_real_escape_string($conn, $_POST['description']);
+
+        $image_query = "";
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+            if (in_array(strtolower($ext), $allowed)) {
+                $image_name = 'room_' . time() . '.' . $ext;
+                if (move_uploaded_file($_FILES['image']['tmp_name'], '../../assets/images/rooms/' . $image_name)) {
+                    $image_query = ", image='$image_name'";
+                    // Optional: delete old image
+                    if (!empty($room['image']) && file_exists('../../assets/images/rooms/' . $room['image'])) {
+                        unlink('../../assets/images/rooms/' . $room['image']);
+                    }
+                }
+            }
+        }
+
+        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_number='$room_number' AND id != $id");
+        if (mysqli_num_rows($check) > 0) {
+            $error = 'Room number already exists!';
+        } else {
+            $query = "UPDATE rooms SET room_number='$room_number', room_type_id=$room_type_id, capacity=$capacity, 
+                      price=$price, status='$status', description='$description' $image_query WHERE id=$id";
+            if (mysqli_query($conn, $query)) {
+                $success = 'Room updated successfully!';
+                $room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id"));
+            } else {
+                $error = 'Failed to update room: ' . mysqli_error($conn);
+            }
+        }
+    }
+
+include '../../includes/header.php';
+include '../../includes/sidebar.php';
+?>
+<div id="page-content-wrapper" class="container-fluid p-4">
+    <h2>Edit Room</h2>
+    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
+    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label">Room Number</label>
+                            <input type="text" name="room_number" class="form-control" value="<?= htmlspecialchars($room['room_number']) ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Room Type</label>
+                            <select name="room_type_id" class="form-control" required>
+                                <?php mysqli_data_seek($types, 0); while ($t = mysqli_fetch_assoc($types)): ?>
+                                <option value="<?= $t['id'] ?>" <?= $t['id'] == $room['room_type_id'] ? 'selected' : '' ?>><?= $t['type_name'] ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Capacity</label>
+                            <input type="number" name="capacity" class="form-control" value="<?= $room['capacity'] ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Price Per Night</label>
+                            <input type="number" step="0.01" name="price" class="form-control" value="<?= $room['price'] ?>" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3 text-center">
+                            <label class="form-label d-block">Current Image</label>
+                            <?php if ($room['image']): ?>
+                                <img src="../../assets/images/rooms/<?= $room['image'] ?>" class="img-thumbnail mb-2" style="max-height: 200px;">
+                            <?php else: ?>
+                                <div class="bg-light border p-4 mb-2">No Image</div>
+                            <?php endif; ?>
+                            <input type="file" name="image" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control" required>
+                        <option value="Available" <?= $room['status'] == 'Available' ? 'selected' : '' ?>>Available</option>
+                        <option value="Occupied" <?= $room['status'] == 'Occupied' ? 'selected' : '' ?>>Occupied</option>
+                        <option value="Maintenance" <?= $room['status'] == 'Maintenance' ? 'selected' : '' ?>>Maintenance</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($room['description']) ?></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Room</button>
+                <a href="index.php" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+<?php include '../../includes/footer.php'; ?>
