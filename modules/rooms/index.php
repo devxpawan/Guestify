@@ -58,11 +58,8 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
                     <?php while ($row = mysqli_fetch_assoc($rooms)): ?>
                     <tr>
                         <td>
-                            <?php if ($row['image']): ?>
-                                <?php
-                                $img_src = file_exists('../../uploads/' . $row['image']) ? '../../uploads/' . $row['image'] : '../../assets/images/rooms/' . $row['image'];
-                                ?>
-                                <img src="<?= $img_src ?>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                            <?php if ($row['image'] && file_exists('../../uploads/' . $row['image'])): ?>
+                                <img src="../../uploads/<?= htmlspecialchars($row['image']) ?>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                             <?php else: ?>
                                 <div class="bg-light border text-center d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 8px; font-size: 10px; color: #94a3b8;">No Img</div>
                             <?php endif; ?>

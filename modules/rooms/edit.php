@@ -44,13 +44,9 @@ $success = '';
                 }
                 if (move_uploaded_file($_FILES['image']['tmp_name'], '../../uploads/' . $image_name)) {
                     $image_query = ", image='$image_name'";
-                    // Optional: delete old image from both old assets path and new uploads path for safety
-                    if (!empty($room['image'])) {
-                        if (file_exists('../../uploads/' . $room['image'])) {
-                            unlink('../../uploads/' . $room['image']);
-                        } elseif (file_exists('../../assets/images/rooms/' . $room['image'])) {
-                            unlink('../../assets/images/rooms/' . $room['image']);
-                        }
+                    // Optional: delete old image
+                    if (!empty($room['image']) && file_exists('../../uploads/' . $room['image'])) {
+                        unlink('../../uploads/' . $room['image']);
                     }
                 }
             }
@@ -107,11 +103,8 @@ include '../../includes/sidebar.php';
                     <div class="col-md-4">
                         <div class="mb-3 text-center">
                             <label class="form-label d-block">Current Image</label>
-                            <?php if ($room['image']): ?>
-                                <?php
-                                $img_src = file_exists('../../uploads/' . $room['image']) ? '../../uploads/' . $room['image'] : '../../assets/images/rooms/' . $room['image'];
-                                ?>
-                                <img src="<?= $img_src ?>" class="img-thumbnail mb-2" style="max-height: 200px;">
+                            <?php if ($room['image'] && file_exists('../../uploads/' . $room['image'])): ?>
+                                <img src="../../uploads/<?= htmlspecialchars($room['image']) ?>" class="img-thumbnail mb-2" style="max-height: 200px;">
                             <?php else: ?>
                                 <div class="bg-light border p-4 mb-2">No Image</div>
                             <?php endif; ?>
