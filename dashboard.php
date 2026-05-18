@@ -18,9 +18,8 @@ $recent = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check
                                ORDER BY r.id DESC LIMIT 5");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <div class="page-header">
-        <h2><i class="bi bi-grid-1x2"></i> Dashboard</h2>
-        <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Welcome back, <?= htmlspecialchars($_SESSION['username']) ?>! Here's your overview.</p>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h4 class="mb-0"><i class="bi bi-grid-1x2"></i> Overview</h4>
     </div>
 
     <div class="row">
