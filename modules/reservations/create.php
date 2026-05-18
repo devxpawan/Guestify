@@ -11,6 +11,7 @@ $error = '';
 $success = '';
 
 $customers = mysqli_query($conn, "SELECT * FROM customers ORDER BY full_name");
+$room_types = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_new_customer = isset($_POST['is_new_customer']);
@@ -135,11 +136,22 @@ include '../../includes/sidebar.php';
                     </div>
                 </div>
 
-                <!-- Room Selection (Disabled until dates are selected) -->
+                <!-- Room Type Selection -->
+                <div class="mb-3">
+                    <label class="form-label">Room Type</label>
+                    <select name="room_type_id" id="roomTypeId" class="form-control" required disabled>
+                        <option value="">Please select Check-In & Check-Out dates first...</option>
+                        <?php while ($t = mysqli_fetch_assoc($room_types)): ?>
+                        <option value="<?= $t['id'] ?>" <?= (isset($_POST['room_type_id']) && $_POST['room_type_id'] == $t['id']) ? 'selected' : '' ?>><?= htmlspecialchars($t['type_name']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+
+                <!-- Room Selection -->
                 <div class="mb-3">
                     <label class="form-label">Available Room</label>
                     <select name="room_id" class="form-control" required disabled>
-                        <option value="">Please select Check-In & Check-Out dates first...</option>
+                        <option value="">Please select Room Type first...</option>
                     </select>
                 </div>
 
@@ -181,20 +193,37 @@ document.getElementById('isNewCustomer').addEventListener('change', function() {
 $(document).ready(function() {
     const checkInInput = $('input[name="check_in"]');
     const checkOutInput = $('input[name="check_out"]');
+    const roomTypeSelect = $('#roomTypeId');
     const roomSelect = $('select[name="room_id"]');
     const originalSelectedRoom = "<?= isset($_POST['room_id']) ? (int)$_POST['room_id'] : '' ?>";
 
-    function fetchAvailableRooms() {
+    function updateRoomTypeSelector() {
         const checkIn = checkInInput.val();
         const checkOut = checkOutInput.val();
 
-        if (!checkIn || !checkOut) {
+        if (!checkIn || !checkOut || new Date(checkOut) <= new Date(checkIn)) {
+            roomTypeSelect.prop('disabled', true).val('');
+            roomTypeSelect.find('option:first').text('Please select Check-In & Check-Out dates first...');
             roomSelect.prop('disabled', true).html('<option value="">Please select Check-In & Check-Out dates first...</option>');
             return;
         }
 
-        if (new Date(checkOut) <= new Date(checkIn)) {
-            roomSelect.prop('disabled', true).html('<option value="">Check-Out must be after Check-In...</option>');
+        roomTypeSelect.prop('disabled', false);
+        roomTypeSelect.find('option:first').text('Select Room Type');
+        fetchAvailableRooms();
+    }
+
+    function fetchAvailableRooms() {
+        const checkIn = checkInInput.val();
+        const checkOut = checkOutInput.val();
+        const roomTypeId = roomTypeSelect.val();
+
+        if (!checkIn || !checkOut || new Date(checkOut) <= new Date(checkIn)) {
+            return;
+        }
+
+        if (!roomTypeId) {
+            roomSelect.prop('disabled', true).html('<option value="">Please select Room Type first...</option>');
             return;
         }
 
@@ -205,7 +234,8 @@ $(document).ready(function() {
             type: 'GET',
             data: {
                 check_in: checkIn,
-                check_out: checkOut
+                check_out: checkOut,
+                room_type_id: roomTypeId
             },
             dataType: 'json',
             success: function(rooms) {
@@ -215,7 +245,7 @@ $(document).ready(function() {
                 }
 
                 if (rooms.length === 0) {
-                    roomSelect.html('<option value="">No rooms available for the selected slot</option>');
+                    roomSelect.html('<option value="">No rooms available for this type</option>');
                     return;
                 }
 
@@ -233,12 +263,17 @@ $(document).ready(function() {
         });
     }
 
-    checkInInput.on('change', fetchAvailableRooms);
-    checkOutInput.on('change', fetchAvailableRooms);
+    checkInInput.on('change', updateRoomTypeSelector);
+    checkOutInput.on('change', updateRoomTypeSelector);
+    roomTypeSelect.on('change', fetchAvailableRooms);
 
     // Auto-trigger if values are already filled (on page load / form validation error reload)
     if (checkInInput.val() && checkOutInput.val()) {
-        fetchAvailableRooms();
+        roomTypeSelect.prop('disabled', false);
+        roomTypeSelect.find('option:first').text('Select Room Type');
+        if (roomTypeSelect.val()) {
+            fetchAvailableRooms();
+        }
     }
 });
 </script>

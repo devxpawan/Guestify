@@ -23,10 +23,14 @@ if (strtotime($check_out) <= strtotime($check_in)) {
 $exclude_res_id = isset($_GET['exclude_res_id']) ? (int)$_GET['exclude_res_id'] : 0;
 $exclude_cond = $exclude_res_id > 0 ? "AND id != $exclude_res_id" : "";
 
+$room_type_id = isset($_GET['room_type_id']) ? (int)$_GET['room_type_id'] : 0;
+$type_cond = $room_type_id > 0 ? "AND r.room_type_id = $room_type_id" : "";
+
 $query = "SELECT r.id, r.room_number, t.type_name, r.price 
           FROM rooms r 
           JOIN room_types t ON r.room_type_id = t.id 
           WHERE r.status != 'Maintenance' 
+          $type_cond
           AND r.id NOT IN (
               SELECT DISTINCT room_id FROM reservations 
               WHERE status NOT IN ('Cancelled', 'Checked-Out') 
