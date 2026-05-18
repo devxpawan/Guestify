@@ -38,3 +38,7 @@
 
 ## Profile
 - User profile management
+
+## Test Accounts
+- Username: admin
+- Password: 12345678
