@@ -18,7 +18,6 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage all guest reservations and bookings</p>
             </div>
             <div class="d-flex gap-2">
-                <a href="calendar.php" class="btn btn-outline-info"><i class="bi bi-calendar3"></i> View Calendar</a>
                 <?php if (has_role(['Admin', 'Receptionist'])): ?>
                 <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Reservation</a>
                 <?php endif; ?>
@@ -75,7 +74,9 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                         </td>
                         <td>
                             <div class="action-btns">
+                                <?php if ($r['status'] == 'Pending'): ?>
                                 <a href="edit.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                <?php endif; ?>
                                 <?php if ($r['status'] == 'Pending'): ?>
                                 <a href="status.php?id=<?= $r['id'] ?>&s=Confirmed" class="btn btn-sm btn-success" title="Confirm"><i class="bi bi-check-circle"></i></a>
                                 <?php endif; ?>

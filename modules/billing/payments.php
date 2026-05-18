@@ -2,6 +2,11 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 
+$branding_query = mysqli_query($conn, "SELECT currency_symbol FROM settings LIMIT 1");
+$branding = mysqli_fetch_assoc($branding_query);
+$global_currency = $branding['currency_symbol'] ?? '$';
+
+
 if (!has_role(['Admin', 'Cashier'])) {
     header('Location: index.php');
     exit();
@@ -27,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($amount <= 0) {
         $error = 'Invalid amount.';
     } elseif ($amount > $remaining) {
-        $error = 'Amount exceeds remaining balance ($' . number_format($remaining, 2) . ').';
+        $error = 'Amount exceeds remaining balance (' . htmlspecialchars($global_currency) . number_format($remaining, 2) . ').';
     } else {
         mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method) VALUES ($id, $amount, '$method')");
 

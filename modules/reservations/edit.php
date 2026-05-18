@@ -9,7 +9,7 @@ if (!has_role(['Admin', 'Receptionist'])) {
 
 $id = (int)$_GET['id'];
 $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
-if (!$res) {
+if (!$res || $res['status'] !== 'Pending') {
     header('Location: index.php');
     exit();
 }

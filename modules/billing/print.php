@@ -2,6 +2,11 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 
+$branding_query = mysqli_query($conn, "SELECT currency_symbol FROM settings LIMIT 1");
+$branding = mysqli_fetch_assoc($branding_query);
+$global_currency = $branding['currency_symbol'] ?? '$';
+
+
 $id = (int)$_GET['id'];
 $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r.check_in, r.check_out, r.adults, r.children, c.full_name, c.nic_passport, c.phone, c.email, c.address, rm.room_number, rm.price, rm.price_day, rm.price_night, rm.price_short 
                                                    FROM invoices i 
