@@ -55,9 +55,9 @@ include '../../includes/sidebar.php';
         <div class="col-md-6">
             <div class="card mb-3">
                 <div class="card-body">
-                    <p><strong>Grand Total:</strong> $<?= number_format($invoice['grand_total'], 2) ?></p>
-                    <p><strong>Total Paid:</strong> $<?= number_format($paid_total, 2) ?></p>
-                    <p><strong>Remaining:</strong> $<?= number_format($remaining, 2) ?></p>
+                    <p><strong>Grand Total:</strong> <?= htmlspecialchars($global_currency) ?><?= number_format($invoice['grand_total'], 2) ?></p>
+                    <p><strong>Total Paid:</strong> <?= htmlspecialchars($global_currency) ?><?= number_format($paid_total, 2) ?></p>
+                    <p><strong>Remaining:</strong> <?= htmlspecialchars($global_currency) ?><?= number_format($remaining, 2) ?></p>
                 </div>
             </div>
             <?php if ($remaining > 0): ?>

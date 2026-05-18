@@ -112,7 +112,7 @@ include '../../includes/sidebar.php';
                             <?php while ($p = mysqli_fetch_assoc($products)): ?>
                             <tr>
                                 <td><?= htmlspecialchars($p['product_name']) ?></td>
-                                <td>$<?= number_format($p['price'], 2) ?></td>
+                                <td><?= htmlspecialchars($global_currency) ?><?= number_format($p['price'], 2) ?></td>
                                 <td><input type="number" name="products[<?= $p['id'] ?>]" class="form-control form-control-sm" style="width:80px" value="0" min="0" max="<?= $p['quantity'] ?>"></td>
                             </tr>
                             <?php endwhile; ?>

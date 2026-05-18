@@ -51,7 +51,7 @@ include '../../includes/sidebar.php';
             <div class="card">
                 <div class="card-header"><h5>Reservation Details</h5></div>
                 <div class="card-body">
-                    <p><strong>Room:</strong> <?= $invoice['room_number'] ?> ($<?= number_format($invoice['price'], 2) ?>/night)</p>
+                    <p><strong>Room:</strong> <?= $invoice['room_number'] ?> (<?= htmlspecialchars($global_currency) ?><?= number_format($invoice['price'], 2) ?>/night)</p>
                     <p><strong>Check-In:</strong> <?= $invoice['check_in'] ?></p>
                     <p><strong>Check-Out:</strong> <?= $invoice['check_out'] ?></p>
                     <p><strong>Adults:</strong> <?= $invoice['adults'] ?> | <strong>Children:</strong> <?= $invoice['children'] ?></p>
@@ -71,8 +71,8 @@ include '../../includes/sidebar.php';
                         <td><?= htmlspecialchars($item['item_name']) ?></td>
                         <td><?= $item['item_type'] ?></td>
                         <td><?= $item['quantity'] ?></td>
-                        <td>$<?= number_format($item['price'], 2) ?></td>
-                        <td>$<?= number_format($item['total'], 2) ?></td>
+                        <td><?= htmlspecialchars($global_currency) ?><?= number_format($item['price'], 2) ?></td>
+                        <td><?= htmlspecialchars($global_currency) ?><?= number_format($item['total'], 2) ?></td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -91,7 +91,7 @@ include '../../includes/sidebar.php';
                         <tbody>
                             <?php while ($pm = mysqli_fetch_assoc($payments)): ?>
                             <tr>
-                                <td>$<?= number_format($pm['amount'], 2) ?></td>
+                                <td><?= htmlspecialchars($global_currency) ?><?= number_format($pm['amount'], 2) ?></td>
                                 <td><?= $pm['payment_method'] ?></td>
                                 <td><?= $pm['payment_date'] ?></td>
                             </tr>
@@ -109,11 +109,11 @@ include '../../includes/sidebar.php';
                 <div class="card-header"><h5>Summary</h5></div>
                 <div class="card-body">
                     <table class="table table-sm">
-                        <tr><td>Room Charges</td><td class="text-end">$<?= number_format($invoice['room_charges'], 2) ?></td></tr>
-                        <tr><td>Product Charges</td><td class="text-end">$<?= number_format($invoice['product_charges'], 2) ?></td></tr>
-                        <tr><td>Tax</td><td class="text-end">$<?= number_format($invoice['tax'], 2) ?></td></tr>
-                        <tr><td>Discount</td><td class="text-end">-$<?= number_format($invoice['discount'], 2) ?></td></tr>
-                        <tr class="fw-bold"><td>Grand Total</td><td class="text-end">$<?= number_format($invoice['grand_total'], 2) ?></td></tr>
+                        <tr><td>Room Charges</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['room_charges'], 2) ?></td></tr>
+                        <tr><td>Product Charges</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['product_charges'], 2) ?></td></tr>
+                        <tr><td>Tax</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['tax'], 2) ?></td></tr>
+                        <tr><td>Discount</td><td class="text-end">-<?= htmlspecialchars($global_currency) ?><?= number_format($invoice['discount'], 2) ?></td></tr>
+                        <tr class="fw-bold"><td>Grand Total</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['grand_total'], 2) ?></td></tr>
                         <tr><td>Status</td><td class="text-end"><span class="badge bg-<?= $invoice['payment_status'] == 'Paid' ? 'success' : ($invoice['payment_status'] == 'Partial' ? 'warning' : 'danger') ?>"><?= $invoice['payment_status'] ?></span></td></tr>
                     </table>
                 </div>

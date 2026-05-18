@@ -48,7 +48,7 @@ $recent = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="stat-card warning">
                 <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
-                <div class="stat-value">$<?= number_format($revenue, 2) ?></div>
+                <div class="stat-value"><?= htmlspecialchars($global_currency) ?><?= number_format($revenue, 2) ?></div>
                 <div class="stat-label">Revenue</div>
             </div>
         </div>
@@ -128,7 +128,7 @@ new Chart(ctx, {
     data: {
         labels: <?= json_encode($months) ?>,
         datasets: [{
-            label: 'Revenue ($)',
+            label: 'Revenue (<?= htmlspecialchars($global_currency) ?>)',
             data: <?= json_encode($totals) ?>,
             borderColor: '#6366f1',
             tension: 0.4,

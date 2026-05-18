@@ -31,12 +31,26 @@ $success = '';
             $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
             $allowed = ['jpg', 'jpeg', 'png', 'gif'];
             if (in_array(strtolower($ext), $allowed)) {
-                $image_name = 'room_' . time() . '.' . $ext;
-                if (move_uploaded_file($_FILES['image']['tmp_name'], '../../assets/images/rooms/' . $image_name)) {
+                $type_query = mysqli_query($conn, "SELECT type_name FROM room_types WHERE id = $room_type_id");
+                $type_row = mysqli_fetch_assoc($type_query);
+                $type_name = $type_row ? $type_row['type_name'] : 'Type';
+
+                $safe_room_number = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $room_number);
+                $safe_type_name = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $type_name);
+
+                $image_name = 'room_' . $safe_room_number . '_' . $safe_type_name . '.' . $ext;
+                if (!is_dir('../../uploads')) {
+                    mkdir('../../uploads', 0777, true);
+                }
+                if (move_uploaded_file($_FILES['image']['tmp_name'], '../../uploads/' . $image_name)) {
                     $image_query = ", image='$image_name'";
-                    // Optional: delete old image
-                    if (!empty($room['image']) && file_exists('../../assets/images/rooms/' . $room['image'])) {
-                        unlink('../../assets/images/rooms/' . $room['image']);
+                    // Optional: delete old image from both old assets path and new uploads path for safety
+                    if (!empty($room['image'])) {
+                        if (file_exists('../../uploads/' . $room['image'])) {
+                            unlink('../../uploads/' . $room['image']);
+                        } elseif (file_exists('../../assets/images/rooms/' . $room['image'])) {
+                            unlink('../../assets/images/rooms/' . $room['image']);
+                        }
                     }
                 }
             }
@@ -94,7 +108,10 @@ include '../../includes/sidebar.php';
                         <div class="mb-3 text-center">
                             <label class="form-label d-block">Current Image</label>
                             <?php if ($room['image']): ?>
-                                <img src="../../assets/images/rooms/<?= $room['image'] ?>" class="img-thumbnail mb-2" style="max-height: 200px;">
+                                <?php
+                                $img_src = file_exists('../../uploads/' . $room['image']) ? '../../uploads/' . $room['image'] : '../../assets/images/rooms/' . $room['image'];
+                                ?>
+                                <img src="<?= $img_src ?>" class="img-thumbnail mb-2" style="max-height: 200px;">
                             <?php else: ?>
                                 <div class="bg-light border p-4 mb-2">No Image</div>
                             <?php endif; ?>

@@ -59,7 +59,10 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
                     <tr>
                         <td>
                             <?php if ($row['image']): ?>
-                                <img src="../../assets/images/rooms/<?= $row['image'] ?>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                                <?php
+                                $img_src = file_exists('../../uploads/' . $row['image']) ? '../../uploads/' . $row['image'] : '../../assets/images/rooms/' . $row['image'];
+                                ?>
+                                <img src="<?= $img_src ?>" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                             <?php else: ?>
                                 <div class="bg-light border text-center d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 8px; font-size: 10px; color: #94a3b8;">No Img</div>
                             <?php endif; ?>
@@ -67,7 +70,7 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
                         <td><strong><?= htmlspecialchars($row['room_number']) ?></strong></td>
                         <td><?= $row['type_name'] ?></td>
                         <td><span class="badge badge-secondary"><?= $row['capacity'] ?> <i class="bi bi-person"></i></span></td>
-                        <td><strong>$<?= number_format($row['price'], 2) ?></strong></td>
+                        <td><strong><?= htmlspecialchars($global_currency) ?><?= number_format($row['price'], 2) ?></strong></td>
                         <td>
                             <span class="badge badge-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?>">
                                 <i class="bi bi-<?= $row['status'] == 'Available' ? 'check-circle' : ($row['status'] == 'Occupied' ? 'x-circle' : 'clock') ?>"></i> <?= $row['status'] ?>

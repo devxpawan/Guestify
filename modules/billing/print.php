@@ -55,8 +55,8 @@ $items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id")
                 <tr>
                     <td><?= htmlspecialchars($item['item_name']) ?></td>
                     <td><?= $item['quantity'] ?></td>
-                    <td>$<?= number_format($item['price'], 2) ?></td>
-                    <td>$<?= number_format($item['total'], 2) ?></td>
+                    <td><?= htmlspecialchars($global_currency) ?><?= number_format($item['price'], 2) ?></td>
+                    <td><?= htmlspecialchars($global_currency) ?><?= number_format($item['total'], 2) ?></td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
@@ -64,11 +64,11 @@ $items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id")
         <div class="row">
             <div class="col-6 offset-6">
                 <table class="table table-sm">
-                    <tr><td>Room Charges</td><td class="text-end">$<?= number_format($invoice['room_charges'], 2) ?></td></tr>
-                    <tr><td>Product Charges</td><td class="text-end">$<?= number_format($invoice['product_charges'], 2) ?></td></tr>
-                    <tr><td>Tax</td><td class="text-end">$<?= number_format($invoice['tax'], 2) ?></td></tr>
-                    <tr><td>Discount</td><td class="text-end">-$<?= number_format($invoice['discount'], 2) ?></td></tr>
-                    <tr class="fw-bold"><td>Grand Total</td><td class="text-end">$<?= number_format($invoice['grand_total'], 2) ?></td></tr>
+                    <tr><td>Room Charges</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['room_charges'], 2) ?></td></tr>
+                    <tr><td>Product Charges</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['product_charges'], 2) ?></td></tr>
+                    <tr><td>Tax</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['tax'], 2) ?></td></tr>
+                    <tr><td>Discount</td><td class="text-end">-<?= htmlspecialchars($global_currency) ?><?= number_format($invoice['discount'], 2) ?></td></tr>
+                    <tr class="fw-bold"><td>Grand Total</td><td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($invoice['grand_total'], 2) ?></td></tr>
                 </table>
             </div>
         </div>

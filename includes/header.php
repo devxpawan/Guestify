@@ -1,9 +1,21 @@
+<?php
+$branding_query = mysqli_query($conn, "SELECT * FROM settings LIMIT 1");
+$branding = mysqli_fetch_assoc($branding_query);
+
+$global_company_name = $branding['company_name'] ?? 'VillaRS';
+$global_currency = $branding['currency_symbol'] ?? '$';
+$global_logo = $branding['logo_path'] ?? '';
+$global_favicon = $branding['favicon_path'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Villa Reservation System</title>
+    <title><?= htmlspecialchars($global_company_name) ?> - Reservation System</title>
+    <?php if ($global_favicon): ?>
+    <link rel="icon" href="<?= $base_url ?>uploads/<?= htmlspecialchars($global_favicon) ?>">
+    <?php endif; ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= $base_url ?>assets/css/style.css">

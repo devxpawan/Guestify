@@ -23,8 +23,18 @@ $types = mysqli_query($conn, "SELECT * FROM room_types");
             $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
             $allowed = ['jpg', 'jpeg', 'png', 'gif'];
             if (in_array(strtolower($ext), $allowed)) {
-                $image_name = 'room_' . time() . '.' . $ext;
-                move_uploaded_file($_FILES['image']['tmp_name'], '../../assets/images/rooms/' . $image_name);
+                $type_query = mysqli_query($conn, "SELECT type_name FROM room_types WHERE id = $room_type_id");
+                $type_row = mysqli_fetch_assoc($type_query);
+                $type_name = $type_row ? $type_row['type_name'] : 'Type';
+
+                $safe_room_number = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $room_number);
+                $safe_type_name = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $type_name);
+
+                $image_name = 'room_' . $safe_room_number . '_' . $safe_type_name . '.' . $ext;
+                if (!is_dir('../../uploads')) {
+                    mkdir('../../uploads', 0777, true);
+                }
+                move_uploaded_file($_FILES['image']['tmp_name'], '../../uploads/' . $image_name);
             }
         }
 

@@ -47,11 +47,11 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                                 <?= htmlspecialchars($inv['full_name']) ?>
                             </div>
                         </td>
-                        <td>$<?= number_format($inv['room_charges'], 2) ?></td>
-                        <td>$<?= number_format($inv['product_charges'], 2) ?></td>
-                        <td>$<?= number_format($inv['tax'], 2) ?></td>
-                        <td class="text-success">-$<?= number_format($inv['discount'], 2) ?></td>
-                        <td><strong class="text-primary">$<?= number_format($inv['grand_total'], 2) ?></strong></td>
+                        <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['room_charges'], 2) ?></td>
+                        <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['product_charges'], 2) ?></td>
+                        <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['tax'], 2) ?></td>
+                        <td class="text-success">-<?= htmlspecialchars($global_currency) ?><?= number_format($inv['discount'], 2) ?></td>
+                        <td><strong class="text-primary"><?= htmlspecialchars($global_currency) ?><?= number_format($inv['grand_total'], 2) ?></strong></td>
                         <td>
                             <span class="badge badge-<?= $inv['payment_status'] == 'Paid' ? 'success' : ($inv['payment_status'] == 'Partial' ? 'warning' : 'danger') ?>">
                                 <i class="bi bi-<?= $inv['payment_status'] == 'Paid' ? 'check-circle' : ($inv['payment_status'] == 'Partial' ? 'clock' : 'x-circle') ?>"></i> <?= $inv['payment_status'] ?>
