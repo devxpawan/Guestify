@@ -12,7 +12,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_profile"])) {
     } else {
         mysqli_query($conn, "UPDATE users SET username='$new_username' WHERE id=$uid");
         $_SESSION["username"] = $new_username;
-        $success = "Profile updated successfully!";
+        $_SESSION['success'] = "Profile updated successfully!";
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     }
 }
 
@@ -30,7 +32,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["change_password"])) {
     } else {
         $hash = password_hash($new, PASSWORD_DEFAULT);
         mysqli_query($conn, "UPDATE users SET password='$hash' WHERE id=$uid");
-        $success = "Password changed successfully!";
+        $_SESSION['success'] = "Password changed successfully!";
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     }
 }
 
@@ -46,8 +50,7 @@ include "../../includes/sidebar.php";
         <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage your account information and security</p>
     </div>
 
-    <?php if (isset($error)): ?><div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><?= $error ?></div><?php endif; ?>
-    <?php if (isset($success)): ?><div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $success ?></div><?php endif; ?>
+
     
     <div class="row">
         <div class="col-md-6">

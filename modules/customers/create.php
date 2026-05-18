@@ -15,7 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $query = "INSERT INTO customers (full_name, nic_passport, phone, email, address) 
               VALUES ('$full_name', '$nic_passport', '$phone', '$email', '$address')";
     if (mysqli_query($conn, $query)) {
-        $success = 'Customer added successfully!';
+        $_SESSION['success'] = 'Customer added successfully!';
+        header("Location: index.php");
+        exit();
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
     }
@@ -26,8 +28,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Add Customer</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST">

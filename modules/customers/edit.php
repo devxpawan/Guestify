@@ -21,7 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "UPDATE customers SET full_name='$full_name', nic_passport='$nic_passport', phone='$phone', email='$email', address='$address' WHERE id=$id";
     if (mysqli_query($conn, $query)) {
-        $success = 'Customer updated!';
+        $_SESSION['success'] = 'Customer updated!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
         $customer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM customers WHERE id=$id"));
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
@@ -33,8 +35,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Edit Customer</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST">

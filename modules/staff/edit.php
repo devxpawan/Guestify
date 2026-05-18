@@ -26,7 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', email='$email', salary=$salary WHERE id=$id";
     if (mysqli_query($conn, $query)) {
-        $success = 'Staff updated!';
+        $_SESSION['success'] = 'Staff updated!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
         $staff = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM staff WHERE id=$id"));
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
@@ -38,8 +40,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Edit Staff</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST">

@@ -48,7 +48,9 @@ $types = mysqli_query($conn, "SELECT * FROM room_types");
             $query = "INSERT INTO rooms (room_number, room_type_id, capacity, price, price_day, price_night, price_short, description, image) 
                       VALUES ('$room_number', $room_type_id, $capacity, $price, $price_day, $price_night, $price_short, '$description', '$image_name')";
             if (mysqli_query($conn, $query)) {
-                $success = 'Room added successfully!';
+                $_SESSION['success'] = 'Room added successfully!';
+                header("Location: index.php");
+                exit();
             } else {
                 $error = 'Failed to add room: ' . mysqli_error($conn);
             }
@@ -60,8 +62,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Add Room</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST" enctype="multipart/form-data">

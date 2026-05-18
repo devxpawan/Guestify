@@ -19,7 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "INSERT INTO staff (name, position, phone, email, salary) VALUES ('$name', '$position', '$phone', '$email', $salary)";
     if (mysqli_query($conn, $query)) {
-        $success = 'Staff added successfully!';
+        $_SESSION['success'] = 'Staff added successfully!';
+        header("Location: index.php");
+        exit();
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
     }
@@ -30,8 +32,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Add Staff</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST">

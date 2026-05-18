@@ -63,7 +63,9 @@ $success = '';
                       price=$price, price_day=$price_day, price_night=$price_night, price_short=$price_short,
                       status='$status', description='$description' $image_query WHERE id=$id";
             if (mysqli_query($conn, $query)) {
-                $success = 'Room updated successfully!';
+                $_SESSION['success'] = 'Room updated successfully!';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
                 $room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id"));
             } else {
                 $error = 'Failed to update room: ' . mysqli_error($conn);
@@ -76,8 +78,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Edit Room</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST" enctype="multipart/form-data">

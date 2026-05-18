@@ -6,8 +6,8 @@ if (!has_role(['Admin'])) {
     exit();
 }
 
-$success_msg = '';
-$error_msg = '';
+$success = '';
+$error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $company_name = mysqli_real_escape_string($conn, $_POST['company_name']);
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (move_uploaded_file($_FILES['logo']['tmp_name'], $logo_target)) {
             $update_query .= ", logo_path = '$logo_name'";
         } else {
-            $error_msg .= "Failed to upload logo. ";
+            $error .= "Failed to upload logo. ";
         }
     }
 
@@ -41,15 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (move_uploaded_file($_FILES['favicon']['tmp_name'], $favicon_target)) {
             $update_query .= ", favicon_path = '$favicon_name'";
         } else {
-            $error_msg .= "Failed to upload favicon. ";
+            $error .= "Failed to upload favicon. ";
         }
     }
 
-    if (empty($error_msg)) {
+    if (empty($error)) {
         if (mysqli_query($conn, $update_query)) {
-            $success_msg = "Branding settings updated successfully! Please refresh to see all changes.";
+            $_SESSION['success'] = "Branding settings updated successfully! Please refresh to see all changes.";
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } else {
-            $error_msg = "Database error: " . mysqli_error($conn);
+            $error = "Database error: " . mysqli_error($conn);
         }
     }
 }
@@ -67,12 +69,7 @@ include '../../includes/sidebar.php';
         <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage your company details, logo, and currency symbol here.</p>
     </div>
 
-    <?php if ($success_msg): ?>
-        <div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $success_msg ?></div>
-    <?php endif; ?>
-    <?php if ($error_msg): ?>
-        <div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><?= $error_msg ?></div>
-    <?php endif; ?>
+
 
     <div class="card">
         <div class="card-header">

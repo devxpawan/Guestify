@@ -23,3 +23,27 @@ $(document).ready(function () {
         }
     });
 });
+
+// Global Toast Notification System
+function showToast(type, message) {
+    var toastEl = document.getElementById('systemToast');
+    var toastBody = document.getElementById('toastMessage');
+    
+    if (!toastEl || !toastBody) return;
+
+    // Reset classes
+    toastEl.className = 'toast align-items-center text-white border-0';
+    
+    // Configure based on type
+    if (type === 'success') {
+        toastEl.classList.add('bg-success');
+        toastBody.innerHTML = '<i class="bi bi-check-circle me-2"></i> ' + message;
+    } else if (type === 'error') {
+        toastEl.classList.add('bg-danger');
+        toastBody.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i> ' + message;
+    }
+    
+    // Show toast
+    var toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+    toast.show();
+}

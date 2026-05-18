@@ -66,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $query = "INSERT INTO reservations (customer_id, room_id, booking_type, check_in, check_out, adults, children, status) 
                           VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending')";
                 if (mysqli_query($conn, $query)) {
-                    $success = 'Reservation created successfully!';
+                    $_SESSION['success'] = 'Reservation created successfully!';
+                    header("Location: index.php");
+                    exit();
                 } else {
                     $error = 'Failed: ' . mysqli_error($conn);
                 }
@@ -80,8 +82,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>New Reservation</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST">

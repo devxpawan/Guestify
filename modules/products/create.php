@@ -13,7 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "INSERT INTO products (product_name, category, quantity, price) VALUES ('$product_name', '$category', $quantity, $price)";
     if (mysqli_query($conn, $query)) {
-        $success = 'Product added successfully!';
+        $_SESSION['success'] = 'Product added successfully!';
+        header("Location: index.php");
+        exit();
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
     }
@@ -24,8 +26,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Add Product</h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="card">
         <div class="card-body">
             <form method="POST">

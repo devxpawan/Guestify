@@ -16,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($type_name)) {
             $query = "INSERT INTO room_types (type_name) VALUES ('$type_name')";
             if (mysqli_query($conn, $query)) {
-                $success = "Room type added successfully!";
+                $_SESSION['success'] = "Room type added successfully!";
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             } else {
                 $error = "Error: " . mysqli_error($conn);
             }
@@ -28,7 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Cannot delete: This type is being used by rooms.";
         } else {
             mysqli_query($conn, "DELETE FROM room_types WHERE id=$id");
-            $success = "Room type deleted.";
+            $_SESSION['success'] = "Room type deleted.";
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         }
     }
 }
@@ -49,8 +53,7 @@ include "../../includes/sidebar.php";
         </div>
     </div>
 
-    <?php if ($error): ?><div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $success ?></div><?php endif; ?>
+
 
     <div class="row">
         <div class="col-md-4">

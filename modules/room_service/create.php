@@ -44,7 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if (mysqli_query($conn, $query)) {
                 mysqli_query($conn, "UPDATE products SET quantity = quantity - $quantity WHERE id=$product_id");
-                $success = 'Order placed successfully!';
+                $_SESSION['success'] = 'Order placed successfully!';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             } else {
                 $error = 'Failed to place order: ' . mysqli_error($conn);
             }
@@ -68,8 +70,7 @@ include '../../includes/sidebar.php';
     <h2>New Order: Room <?= $res['room_number'] ?></h2>
     <p class="text-muted">Guest: <?= htmlspecialchars($res['full_name']) ?></p>
 
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
 
     <div class="row">
         <div class="col-md-6">

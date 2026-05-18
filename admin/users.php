@@ -21,19 +21,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Username already exists!';
         } else {
             mysqli_query($conn, "INSERT INTO users (username, password, role_id) VALUES ('$username', '$password', $role_id)");
-            $success = 'User created successfully!';
+            $_SESSION['success'] = 'User created successfully!';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         }
     } elseif (isset($_POST['toggle_status'])) {
         $uid = (int)$_POST['user_id'];
         $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT status FROM users WHERE id=$uid"));
         $new_status = $user['status'] ? 0 : 1;
         mysqli_query($conn, "UPDATE users SET status=$new_status WHERE id=$uid");
-        $success = 'User status updated!';
-    } elseif (isset($_POST['reset_password'])) {
+        $_SESSION['success'] = 'User status updated!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    } elseif (isset($_POST['update_user'])) {
         $uid = (int)$_POST['user_id'];
-        $np = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
-        mysqli_query($conn, "UPDATE users SET password='$np' WHERE id=$uid");
-        $success = 'Password reset successfully!';
+        $username = mysqli_real_escape_string($conn, $_POST['username']);
+        $role_id = (int)($_POST['role_id'] ?? 0);
+        
+        // Prevent self-role modification
+        if ($uid == $_SESSION['user_id']) {
+            $sql = "UPDATE users SET username='$username'"; // Do not update role_id
+            $_SESSION['username'] = $username;
+        } else {
+            $sql = "UPDATE users SET username='$username', role_id=$role_id";
+        }
+        
+        if (!empty($_POST['new_password'])) {
+            $np = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+            $sql .= ", password='$np'";
+        }
+        
+        mysqli_query($conn, $sql . " WHERE id=$uid");
+        $_SESSION['success'] = 'User details updated successfully!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     }
 }
 
@@ -49,8 +70,7 @@ include '../includes/sidebar.php';
         <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage system users and access controls</p>
     </div>
 
-    <?php if ($error): ?><div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= $success ?></div><?php endif; ?>
+
 
     <div class="card mb-4">
         <div class="card-header"><h5><i class="bi bi-person-plus"></i> Create New User</h5></div>
@@ -113,7 +133,7 @@ include '../includes/sidebar.php';
                                         <i class="bi bi-<?= $u['status'] ? 'pause' : 'play' ?>"></i> <?= $u['status'] ? 'Deactivate' : 'Activate' ?>
                                     </button>
                                 </form>
-                                <button class="btn btn-sm btn-outline-info" onclick="showReset(<?= $u['id'] ?>)"><i class="bi bi-key"></i> Reset Pwd</button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)"><i class="bi bi-pencil"></i> Edit</button>
                             </div>
                         </td>
                     </tr>
@@ -124,19 +144,33 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
-<div class="modal fade" id="resetModal" tabindex="-1">
+<div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
-            <div class="modal-header"><h5><i class="bi bi-key me-2"></i>Reset Password</h5></div>
+            <div class="modal-header"><h5><i class="bi bi-pencil me-2"></i>Edit User</h5></div>
             <div class="modal-body">
-                <input type="hidden" name="user_id" id="reset_user_id">
+                <input type="hidden" name="user_id" id="edit_user_id">
                 <div class="mb-3">
-                    <label class="form-label">New Password</label>
-                    <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required>
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" id="edit_username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select name="role_id" id="edit_role_id" class="form-select" required>
+                        <?php
+                        mysqli_data_seek($roles, 0);
+                        while ($r = mysqli_fetch_assoc($roles)): ?>
+                        <option value="<?= $r['id'] ?>"><?= $r['role_name'] ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New Password <small class="text-muted">(Leave blank to keep current)</small></label>
+                    <input type="password" name="new_password" class="form-control" placeholder="Enter new password">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" name="reset_password" class="btn btn-primary"><i class="bi bi-check-lg"></i> Reset</button>
+                <button type="submit" name="update_user" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i> Cancel</button>
             </div>
         </form>
@@ -144,9 +178,17 @@ include '../includes/sidebar.php';
 </div>
 
 <script>
-function showReset(id) {
-    document.getElementById('reset_user_id').value = id;
-    new bootstrap.Modal(document.getElementById('resetModal')).show();
+function showEdit(id, username, roleId) {
+    document.getElementById('edit_user_id').value = id;
+    document.getElementById('edit_username').value = username;
+    
+    var roleSelect = document.getElementById('edit_role_id');
+    roleSelect.value = roleId;
+    
+    // Disable role select if editing self
+    roleSelect.disabled = (id == <?= $_SESSION['user_id'] ?>);
+    
+    new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 </script>
 <?php include '../includes/footer.php'; ?>

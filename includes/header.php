@@ -33,7 +33,6 @@ $global_favicon = $branding['favicon_path'] ?? '';
                     </div>
                     <div class="text-start">
                         <div class="fw-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($_SESSION['username']) ?></div>
-                        <div class="badge bg-primary bg-opacity-10 text-primary"><?= $_SESSION['role'] ?></div>
                     </div>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">

@@ -43,7 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_query($conn, "UPDATE invoices SET payment_status='Partial' WHERE id=$id");
         }
 
-        $success = 'Payment recorded!';
+        $_SESSION['success'] = 'Payment recorded!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
         $paid_total = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=$id"))[0];
         $remaining = $invoice['grand_total'] - $paid_total;
     }
@@ -54,8 +56,7 @@ include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <h2>Payments - Invoice #<?= $id ?></h2>
-    <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
-    <?php if ($success): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-3">

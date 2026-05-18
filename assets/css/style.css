@@ -53,7 +53,10 @@ body.toggled #page-content-wrapper {
 .top-navbar {
     background: #fff;
     border-bottom: 1px solid #e2e8f0;
-    padding: 0.5rem 1.25rem;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
     position: sticky;
     top: 0;
     z-index: 999;
@@ -69,27 +72,30 @@ body.toggled .top-navbar {
 .top-navbar #menu-toggle {
     color: #475569;
     border: 1px solid #e2e8f0;
-    padding: 0.35rem 0.6rem;
+    padding: 0.4rem 0.75rem;
     border-radius: 8px;
     background: transparent;
     line-height: 1;
 }
 
 .top-navbar #menu-toggle:hover {
-    background: #f1f5f9;
+    background: #f8fafc;
+    border-color: #cbd5e1;
 }
 
 .top-navbar .dropdown-toggle {
     color: #475569;
     border: 1px solid #e2e8f0;
-    padding: 0.35rem 0.75rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 8px;
     background: transparent;
     font-size: 0.85rem;
+    transition: all 0.2s ease;
 }
 
 .top-navbar .dropdown-toggle:hover {
-    background: #f1f5f9;
+    background: #f8fafc;
+    border-color: #cbd5e1;
 }
 
 .top-navbar .dropdown-toggle::after {
@@ -98,10 +104,10 @@ body.toggled .top-navbar {
 
 .top-navbar .dropdown-menu {
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     padding: 0.5rem;
-    min-width: 180px;
+    min-width: 200px;
 }
 
 .top-navbar .dropdown-item {
@@ -116,7 +122,10 @@ body.toggled .top-navbar {
 
 /* ── Sidebar Brand ── */
 .sidebar-brand {
-    padding: 1.25rem 1.25rem 1rem;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -124,7 +133,6 @@ body.toggled .top-navbar {
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    margin-bottom: 0.6rem;
 }
 
 .sidebar-brand-logo img {
