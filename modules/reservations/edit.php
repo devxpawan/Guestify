@@ -15,7 +15,6 @@ if (!$res) {
 }
 
 $customers = mysqli_query($conn, "SELECT * FROM customers ORDER BY full_name");
-$rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id ORDER BY r.room_number");
 $error = '';
 $success = '';
 
@@ -28,17 +27,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $children = (int)$_POST['children'];
     $status = mysqli_real_escape_string($conn, $_POST['status']);
 
-    $overlap = mysqli_query($conn, "SELECT id FROM reservations WHERE room_id=$room_id AND id != $id AND status NOT IN ('Cancelled','Checked-Out') AND (check_in < '$check_out' AND check_out > '$check_in')");
-    if (mysqli_num_rows($overlap) > 0) {
-        $error = 'Room is not available for the selected time slot!';
+    if (empty($room_id)) {
+        $error = 'Please select an available room!';
+    } elseif (strtotime($check_out) <= strtotime($check_in)) {
+        $error = 'Check-out must be after check-in!';
     } else {
-        $query = "UPDATE reservations SET customer_id=$customer_id, room_id=$room_id, check_in='$check_in', 
-                  check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id";
-        if (mysqli_query($conn, $query)) {
-            $success = 'Reservation updated!';
-            $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
+        // Precise datetime overlap check excluding current reservation
+        $overlap = mysqli_query($conn, "SELECT id FROM reservations 
+                                        WHERE room_id=$room_id 
+                                        AND id != $id 
+                                        AND status NOT IN ('Cancelled','Checked-Out') 
+                                        AND (check_in < '$check_out' AND check_out > '$check_in')");
+        if (mysqli_num_rows($overlap) > 0) {
+            $error = 'Room is not available for the selected time slot!';
         } else {
-            $error = 'Failed: ' . mysqli_error($conn);
+            $query = "UPDATE reservations SET customer_id=$customer_id, room_id=$room_id, check_in='$check_in', 
+                      check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id";
+            if (mysqli_query($conn, $query)) {
+                $success = 'Reservation updated successfully!';
+                $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
+            } else {
+                $error = 'Failed: ' . mysqli_error($conn);
+            }
         }
     }
 }
@@ -53,42 +63,49 @@ include '../../includes/sidebar.php';
     <div class="card">
         <div class="card-body">
             <form method="POST">
+                <!-- Customer Selection Section -->
                 <div class="mb-3">
-                    <label class="form-label">Customer</label>
+                    <label class="form-label text-muted">Customer</label>
                     <select name="customer_id" class="form-control" required>
                         <?php while ($c = mysqli_fetch_assoc($customers)): ?>
-                        <option value="<?= $c['id'] ?>" <?= $c['id'] == $res['customer_id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['full_name']) ?></option>
+                        <option value="<?= $c['id'] ?>" <?= $c['id'] == $res['customer_id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['full_name']) ?> (<?= htmlspecialchars($c['nic_passport']) ?>)</option>
                         <?php endwhile; ?>
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Room</label>
-                    <select name="room_id" class="form-control" required>
-                        <?php while ($r = mysqli_fetch_assoc($rooms)): ?>
-                        <option value="<?= $r['id'] ?>" <?= $r['id'] == $res['room_id'] ? 'selected' : '' ?>><?= $r['room_number'] ?> - <?= $r['type_name'] ?></option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
+
+                <!-- Check-In & Check-Out Date Selector First -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Check-In</label>
+                        <label class="form-label">Check-In Date & Time</label>
                         <input type="datetime-local" name="check_in" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($res['check_in'])) ?>" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Check-Out</label>
+                        <label class="form-label">Check-Out Date & Time</label>
                         <input type="datetime-local" name="check_out" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($res['check_out'])) ?>" required>
                     </div>
                 </div>
+
+                <!-- Room Selection (Disabled until dates are selected) -->
+                <div class="mb-3">
+                    <label class="form-label">Available Room</label>
+                    <select name="room_id" class="form-control" required disabled>
+                        <option value="">Please select Check-In & Check-Out dates first...</option>
+                    </select>
+                </div>
+
+                <!-- Room Details / Adults & Children -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Adults</label>
-                        <input type="number" name="adults" class="form-control" value="<?= $res['adults'] ?>" required>
+                        <input type="number" name="adults" class="form-control" value="<?= htmlspecialchars($res['adults']) ?>" required>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Children</label>
-                        <input type="number" name="children" class="form-control" value="<?= $res['children'] ?>">
+                        <input type="number" name="children" class="form-control" value="<?= htmlspecialchars($res['children']) ?>">
                     </div>
                 </div>
+
+                <!-- Reservation Status -->
                 <div class="mb-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-control">
@@ -99,10 +116,80 @@ include '../../includes/sidebar.php';
                         <option value="Cancelled" <?= $res['status'] == 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">Update</button>
+
+                <button type="submit" class="btn btn-primary">Update Reservation</button>
                 <a href="index.php" class="btn btn-secondary">Cancel</a>
             </form>
         </div>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+$(document).ready(function() {
+    const checkInInput = $('input[name="check_in"]');
+    const checkOutInput = $('input[name="check_out"]');
+    const roomSelect = $('select[name="room_id"]');
+    const originalSelectedRoom = "<?= isset($_POST['room_id']) ? (int)$_POST['room_id'] : $res['room_id'] ?>";
+    const excludeResId = "<?= $id ?>";
+
+    function fetchAvailableRooms() {
+        const checkIn = checkInInput.val();
+        const checkOut = checkOutInput.val();
+
+        if (!checkIn || !checkOut) {
+            roomSelect.prop('disabled', true).html('<option value="">Please select Check-In & Check-Out dates first...</option>');
+            return;
+        }
+
+        if (new Date(checkOut) <= new Date(checkIn)) {
+            roomSelect.prop('disabled', true).html('<option value="">Check-Out must be after Check-In...</option>');
+            return;
+        }
+
+        roomSelect.prop('disabled', true).html('<option value="">Loading available rooms...</option>');
+
+        $.ajax({
+            url: 'get_available_rooms.php',
+            type: 'GET',
+            data: {
+                check_in: checkIn,
+                check_out: checkOut,
+                exclude_res_id: excludeResId
+            },
+            dataType: 'json',
+            success: function(rooms) {
+                if (rooms.error) {
+                    roomSelect.html('<option value="">' + rooms.error + '</option>');
+                    return;
+                }
+
+                if (rooms.length === 0) {
+                    roomSelect.html('<option value="">No rooms available for the selected slot</option>');
+                    return;
+                }
+
+                let options = '<option value="">Select Room</option>';
+                rooms.forEach(function(room) {
+                    const isSelected = room.id == originalSelectedRoom ? 'selected' : '';
+                    options += `<option value="${room.id}" ${isSelected}>Room ${room.room_number} - ${room.type_name} (<?= htmlspecialchars($global_currency) ?>${room.price.toFixed(2)})</option>`;
+                });
+
+                roomSelect.html(options).prop('disabled', false);
+            },
+            error: function() {
+                roomSelect.html('<option value="">Failed to fetch available rooms</option>');
+            }
+        });
+    }
+
+    checkInInput.on('change', fetchAvailableRooms);
+    checkOutInput.on('change', fetchAvailableRooms);
+
+    // Auto-trigger on load
+    if (checkInInput.val() && checkOutInput.val()) {
+        fetchAvailableRooms();
+    }
+});
+</script>
 <?php include '../../includes/footer.php'; ?>
