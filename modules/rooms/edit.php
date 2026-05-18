@@ -22,7 +22,10 @@ $success = '';
         $room_number = mysqli_real_escape_string($conn, $_POST['room_number']);
         $room_type_id = (int)$_POST['room_type_id'];
         $capacity = (int)$_POST['capacity'];
-        $price = (float)$_POST['price'];
+        $price_day = (float)$_POST['price_day'];
+        $price_night = (float)$_POST['price_night'];
+        $price_short = (float)$_POST['price_short'];
+        $price = $price_night; // fallback
         $status = mysqli_real_escape_string($conn, $_POST['status']);
         $description = mysqli_real_escape_string($conn, $_POST['description']);
 
@@ -57,7 +60,8 @@ $success = '';
             $error = 'Room number already exists!';
         } else {
             $query = "UPDATE rooms SET room_number='$room_number', room_type_id=$room_type_id, capacity=$capacity, 
-                      price=$price, status='$status', description='$description' $image_query WHERE id=$id";
+                      price=$price, price_day=$price_day, price_night=$price_night, price_short=$price_short,
+                      status='$status', description='$description' $image_query WHERE id=$id";
             if (mysqli_query($conn, $query)) {
                 $success = 'Room updated successfully!';
                 $room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id"));
@@ -95,9 +99,19 @@ include '../../includes/sidebar.php';
                             <label class="form-label">Capacity</label>
                             <input type="number" name="capacity" class="form-control" value="<?= $room['capacity'] ?>" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Price Per Night</label>
-                            <input type="number" step="0.01" name="price" class="form-control" value="<?= $room['price'] ?>" required>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Price - Day Time (<?= htmlspecialchars($global_currency) ?>)</label>
+                                <input type="number" step="0.01" name="price_day" class="form-control" value="<?= $room['price_day'] ?>" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Price - Night Time (<?= htmlspecialchars($global_currency) ?>)</label>
+                                <input type="number" step="0.01" name="price_night" class="form-control" value="<?= $room['price_night'] ?>" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Price - Short Time (<?= htmlspecialchars($global_currency) ?>)</label>
+                                <input type="number" step="0.01" name="price_short" class="form-control" value="<?= $room['price_short'] ?>" required>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">

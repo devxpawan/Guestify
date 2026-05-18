@@ -23,12 +23,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tax_pct = (float)$_POST['tax'];
     $discount = (float)$_POST['discount'];
 
-    $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT r.*, rm.price FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE r.id=$reservation_id"));
+    $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT r.*, rm.price, rm.price_day, rm.price_night, rm.price_short FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE r.id=$reservation_id"));
     if (!$res) {
         $error = 'Invalid reservation.';
     } else {
+        $price = $res['price_night'];
+        if ($res['booking_type'] === 'Day Time') {
+            $price = $res['price_day'];
+        } elseif ($res['booking_type'] === 'Short Time') {
+            $price = $res['price_short'];
+        }
+
         $days = max(1, ceil((strtotime($res['check_out']) - strtotime($res['check_in'])) / 86400));
-        $room_charges = $days * $res['price'];
+        $room_charges = $days * $price;
         $product_charges = 0;
 
         if (isset($_POST['products'])) {
@@ -56,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (mysqli_query($conn, $query)) {
             $invoice_id = mysqli_insert_id($conn);
 
-            mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Room', 'Room Charges ({$res['check_in']} to {$res['check_out']})', $days, {$res['price']}, $room_charges)");
+            mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Room', 'Room Charges ({$res['check_in']} to {$res['check_out']})', $days, $price, $room_charges)");
 
             if (isset($_POST['products'])) {
                 foreach ($_POST['products'] as $pid => $qty) {

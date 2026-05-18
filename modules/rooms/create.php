@@ -15,7 +15,10 @@ $types = mysqli_query($conn, "SELECT * FROM room_types");
         $room_number = mysqli_real_escape_string($conn, $_POST['room_number']);
         $room_type_id = (int)$_POST['room_type_id'];
         $capacity = (int)$_POST['capacity'];
-        $price = (float)$_POST['price'];
+        $price_day = (float)$_POST['price_day'];
+        $price_night = (float)$_POST['price_night'];
+        $price_short = (float)$_POST['price_short'];
+        $price = $price_night; // fallback/standard price
         $description = mysqli_real_escape_string($conn, $_POST['description']);
         
         $image_name = '';
@@ -42,8 +45,8 @@ $types = mysqli_query($conn, "SELECT * FROM room_types");
         if (mysqli_num_rows($check) > 0) {
             $error = 'Room number already exists!';
         } else {
-            $query = "INSERT INTO rooms (room_number, room_type_id, capacity, price, description, image) 
-                      VALUES ('$room_number', $room_type_id, $capacity, $price, '$description', '$image_name')";
+            $query = "INSERT INTO rooms (room_number, room_type_id, capacity, price, price_day, price_night, price_short, description, image) 
+                      VALUES ('$room_number', $room_type_id, $capacity, $price, $price_day, $price_night, $price_short, '$description', '$image_name')";
             if (mysqli_query($conn, $query)) {
                 $success = 'Room added successfully!';
             } else {
@@ -79,9 +82,19 @@ include '../../includes/sidebar.php';
                     <label class="form-label">Capacity</label>
                     <input type="number" name="capacity" class="form-control" required>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Price Per Night</label>
-                    <input type="number" step="0.01" name="price" class="form-control" required>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Price - Day Time (<?= htmlspecialchars($global_currency) ?>)</label>
+                        <input type="number" step="0.01" name="price_day" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Price - Night Time (<?= htmlspecialchars($global_currency) ?>)</label>
+                        <input type="number" step="0.01" name="price_night" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Price - Short Time (<?= htmlspecialchars($global_currency) ?>)</label>
+                        <input type="number" step="0.01" name="price_short" class="form-control" required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Room Image</label>

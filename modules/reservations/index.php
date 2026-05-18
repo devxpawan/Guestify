@@ -53,7 +53,10 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                                 </div>
                             </div>
                         </td>
-                        <td><span class="badge badge-secondary">Room <?= $r['room_number'] ?></span></td>
+                        <td>
+                            <span class="badge badge-secondary">Room <?= $r['room_number'] ?></span>
+                            <br><small class="text-muted font-monospace"><?= htmlspecialchars($r['booking_type']) ?></small>
+                        </td>
                         <td>
                             <div><?= date('M d, Y', strtotime($r['check_in'])) ?></div>
                             <small class="text-muted"><?= date('h:i A', strtotime($r['check_in'])) ?></small>

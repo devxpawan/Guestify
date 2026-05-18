@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$error) {
         $room_id = (int)$_POST['room_id'];
+        $booking_type = mysqli_real_escape_string($conn, $_POST['booking_type'] ?? 'Night Time');
         $check_in = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_in']));
         $check_out = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_out']));
         $adults = (int)$_POST['adults'];
@@ -62,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (mysqli_num_rows($overlap) > 0) {
                 $error = 'Room is not available for the selected time slot!';
             } else {
-                $query = "INSERT INTO reservations (customer_id, room_id, check_in, check_out, adults, children, status) 
-                          VALUES ($customer_id, $room_id, '$check_in', '$check_out', $adults, $children, 'Pending')";
+                $query = "INSERT INTO reservations (customer_id, room_id, booking_type, check_in, check_out, adults, children, status) 
+                          VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending')";
                 if (mysqli_query($conn, $query)) {
                     $success = 'Reservation created successfully!';
                 } else {
@@ -136,15 +137,24 @@ include '../../includes/sidebar.php';
                     </div>
                 </div>
 
-                <!-- Room Type Selection -->
-                <div class="mb-3">
-                    <label class="form-label">Room Type</label>
-                    <select name="room_type_id" id="roomTypeId" class="form-control" required disabled>
-                        <option value="">Please select Check-In & Check-Out dates first...</option>
-                        <?php while ($t = mysqli_fetch_assoc($room_types)): ?>
-                        <option value="<?= $t['id'] ?>" <?= (isset($_POST['room_type_id']) && $_POST['room_type_id'] == $t['id']) ? 'selected' : '' ?>><?= htmlspecialchars($t['type_name']) ?></option>
-                        <?php endwhile; ?>
-                    </select>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Booking Type</label>
+                        <select name="booking_type" id="bookingType" class="form-control" required>
+                            <option value="Night Time" <?= (isset($_POST['booking_type']) && $_POST['booking_type'] == 'Night Time') ? 'selected' : '' ?>>Night Time (Overnight)</option>
+                            <option value="Day Time" <?= (isset($_POST['booking_type']) && $_POST['booking_type'] == 'Day Time') ? 'selected' : '' ?>>Day Time (Day Use)</option>
+                            <option value="Short Time" <?= (isset($_POST['booking_type']) && $_POST['booking_type'] == 'Short Time') ? 'selected' : '' ?>>Short Time</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Room Type</label>
+                        <select name="room_type_id" id="roomTypeId" class="form-control" required disabled>
+                            <option value="">Please select Check-In & Check-Out dates first...</option>
+                            <?php mysqli_data_seek($room_types, 0); while ($t = mysqli_fetch_assoc($room_types)): ?>
+                            <option value="<?= $t['id'] ?>" <?= (isset($_POST['room_type_id']) && $_POST['room_type_id'] == $t['id']) ? 'selected' : '' ?>><?= htmlspecialchars($t['type_name']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Room Selection -->
@@ -193,6 +203,7 @@ document.getElementById('isNewCustomer').addEventListener('change', function() {
 $(document).ready(function() {
     const checkInInput = $('input[name="check_in"]');
     const checkOutInput = $('input[name="check_out"]');
+    const bookingTypeSelect = $('#bookingType');
     const roomTypeSelect = $('#roomTypeId');
     const roomSelect = $('select[name="room_id"]');
     const originalSelectedRoom = "<?= isset($_POST['room_id']) ? (int)$_POST['room_id'] : '' ?>";
@@ -217,6 +228,7 @@ $(document).ready(function() {
         const checkIn = checkInInput.val();
         const checkOut = checkOutInput.val();
         const roomTypeId = roomTypeSelect.val();
+        const bookingType = bookingTypeSelect.val();
 
         if (!checkIn || !checkOut || new Date(checkOut) <= new Date(checkIn)) {
             return;
@@ -235,7 +247,8 @@ $(document).ready(function() {
             data: {
                 check_in: checkIn,
                 check_out: checkOut,
-                room_type_id: roomTypeId
+                room_type_id: roomTypeId,
+                booking_type: bookingType
             },
             dataType: 'json',
             success: function(rooms) {
@@ -252,7 +265,7 @@ $(document).ready(function() {
                 let options = '<option value="">Select Room</option>';
                 rooms.forEach(function(room) {
                     const isSelected = room.id == originalSelectedRoom ? 'selected' : '';
-                    options += `<option value="${room.id}" ${isSelected}>Room ${room.room_number} - ${room.type_name} (<?= htmlspecialchars($global_currency) ?>${room.price.toFixed(2)})</option>`;
+                    options += `<option value="${room.id}" ${isSelected}>Room ${room.room_number} - ${room.type_name} (<?= htmlspecialchars($global_currency) ?>${parseFloat(room.price).toFixed(2)})</option>`;
                 });
 
                 roomSelect.html(options).prop('disabled', false);
@@ -265,6 +278,7 @@ $(document).ready(function() {
 
     checkInInput.on('change', updateRoomTypeSelector);
     checkOutInput.on('change', updateRoomTypeSelector);
+    bookingTypeSelect.on('change', fetchAvailableRooms);
     roomTypeSelect.on('change', fetchAvailableRooms);
 
     // Auto-trigger if values are already filled (on page load / form validation error reload)

@@ -26,7 +26,15 @@ $exclude_cond = $exclude_res_id > 0 ? "AND id != $exclude_res_id" : "";
 $room_type_id = isset($_GET['room_type_id']) ? (int)$_GET['room_type_id'] : 0;
 $type_cond = $room_type_id > 0 ? "AND r.room_type_id = $room_type_id" : "";
 
-$query = "SELECT r.id, r.room_number, t.type_name, r.price 
+$booking_type = isset($_GET['booking_type']) ? mysqli_real_escape_string($conn, $_GET['booking_type']) : 'Night Time';
+$price_field = "r.price_night";
+if ($booking_type === 'Day Time') {
+    $price_field = "r.price_day";
+} elseif ($booking_type === 'Short Time') {
+    $price_field = "r.price_short";
+}
+
+$query = "SELECT r.id, r.room_number, t.type_name, $price_field AS price 
           FROM rooms r 
           JOIN room_types t ON r.room_type_id = t.id 
           WHERE r.status != 'Maintenance' 

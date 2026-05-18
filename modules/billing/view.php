@@ -8,7 +8,7 @@ if (!has_role(['Admin', 'Cashier'])) {
 }
 
 $id = (int)$_GET['id'];
-$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, r.adults, r.children, c.full_name, c.nic_passport, c.phone, c.email, c.address, rm.room_number, rm.price 
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r.check_in, r.check_out, r.adults, r.children, c.full_name, c.nic_passport, c.phone, c.email, c.address, rm.room_number, rm.price, rm.price_day, rm.price_night, rm.price_short 
                                                    FROM invoices i 
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
@@ -51,7 +51,15 @@ include '../../includes/sidebar.php';
             <div class="card">
                 <div class="card-header"><h5>Reservation Details</h5></div>
                 <div class="card-body">
-                    <p><strong>Room:</strong> <?= $invoice['room_number'] ?> (<?= htmlspecialchars($global_currency) ?><?= number_format($invoice['price'], 2) ?>/night)</p>
+                    <?php
+                    $room_rate = $invoice['price_night'];
+                    if ($invoice['booking_type'] === 'Day Time') {
+                        $room_rate = $invoice['price_day'];
+                    } elseif ($invoice['booking_type'] === 'Short Time') {
+                        $room_rate = $invoice['price_short'];
+                    }
+                    ?>
+                    <p><strong>Room:</strong> <?= $invoice['room_number'] ?> (<?= htmlspecialchars($global_currency) ?><?= number_format($room_rate, 2) ?> / <?= htmlspecialchars($invoice['booking_type']) ?>)</p>
                     <p><strong>Check-In:</strong> <?= $invoice['check_in'] ?></p>
                     <p><strong>Check-Out:</strong> <?= $invoice['check_out'] ?></p>
                     <p><strong>Adults:</strong> <?= $invoice['adults'] ?> | <strong>Children:</strong> <?= $invoice['children'] ?></p>

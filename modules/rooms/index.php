@@ -51,7 +51,7 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Image</th><th>Room No.</th><th>Type</th><th>Capacity</th><th>Price/Night</th><th>Status</th><th>Actions</th>
+                        <th>Image</th><th>Room No.</th><th>Type</th><th>Capacity</th><th>Pricing</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,7 +67,11 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
                         <td><strong><?= htmlspecialchars($row['room_number']) ?></strong></td>
                         <td><?= $row['type_name'] ?></td>
                         <td><span class="badge badge-secondary"><?= $row['capacity'] ?> <i class="bi bi-person"></i></span></td>
-                        <td><strong><?= htmlspecialchars($global_currency) ?><?= number_format($row['price'], 2) ?></strong></td>
+                        <td>
+                            <div class="small text-muted">Day: <strong class="text-dark"><?= htmlspecialchars($global_currency) ?><?= number_format($row['price_day'], 2) ?></strong></div>
+                            <div class="small text-muted">Night: <strong class="text-dark"><?= htmlspecialchars($global_currency) ?><?= number_format($row['price_night'], 2) ?></strong></div>
+                            <div class="small text-muted">Short: <strong class="text-dark"><?= htmlspecialchars($global_currency) ?><?= number_format($row['price_short'], 2) ?></strong></div>
+                        </td>
                         <td>
                             <span class="badge badge-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?>">
                                 <i class="bi bi-<?= $row['status'] == 'Available' ? 'check-circle' : ($row['status'] == 'Occupied' ? 'x-circle' : 'clock') ?>"></i> <?= $row['status'] ?>
