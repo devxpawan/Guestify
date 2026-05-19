@@ -1,16 +1,27 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/pagination.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
 $search = '';
 $where = '';
-if (isset($_GET['search'])) {
+if (isset($_GET['search']) && trim($_GET['search']) !== '') {
     $search = mysqli_real_escape_string($conn, $_GET['search']);
     $where = "WHERE full_name LIKE '%$search%' OR nic_passport LIKE '%$search%' OR phone LIKE '%$search%'";
 }
-$customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DESC");
+
+// Pagination
+$per_page = 10;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $per_page;
+
+$count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM customers $where");
+$total_rows = mysqli_fetch_assoc($count_res)['total'];
+$total_pages = ceil($total_rows / $per_page);
+
+$customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DESC LIMIT $offset, $per_page");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
@@ -77,6 +88,11 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Showing <?= min($total_rows, $offset + 1) ?>-<?= min($total_rows, $offset + $per_page) ?> of <?= $total_rows ?> customers</small>
+        <?php render_pagination($page, $total_pages); ?>
     </div>
 </div>
 <?php include '../../includes/footer.php'; ?>

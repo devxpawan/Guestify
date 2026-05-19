@@ -1,31 +1,15 @@
 <?php
 require_once '../includes/session.php';
 require_once '../config/database.php';
+require_once '../includes/pagination.php';
 
 if (!has_role(['Admin'])) {
     header('Location: ../dashboard.php');
     exit();
 }
 
-$error = '';
-$success = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_user'])) {
-        $username = mysqli_real_escape_string($conn, $_POST['username']);
-        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $role_id = (int)$_POST['role_id'];
-
-        $check = mysqli_query($conn, "SELECT id FROM users WHERE username='$username'");
-        if (mysqli_num_rows($check) > 0) {
-            $error = 'Username already exists!';
-        } else {
-            mysqli_query($conn, "INSERT INTO users (username, password, role_id) VALUES ('$username', '$password', $role_id)");
-            $_SESSION['success'] = 'User created successfully!';
-            header("Location: " . $_SERVER['REQUEST_URI']);
-            exit();
-        }
-    } elseif (isset($_POST['toggle_status'])) {
+    if (isset($_POST['toggle_status'])) {
         $uid = (int)$_POST['user_id'];
         $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT status FROM users WHERE id=$uid"));
         $new_status = $user['status'] ? 0 : 1;
@@ -38,9 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = mysqli_real_escape_string($conn, $_POST['username']);
         $role_id = (int)($_POST['role_id'] ?? 0);
         
-        // Prevent self-role modification
         if ($uid == $_SESSION['user_id']) {
-            $sql = "UPDATE users SET username='$username'"; // Do not update role_id
+            $sql = "UPDATE users SET username='$username'";
             $_SESSION['username'] = $username;
         } else {
             $sql = "UPDATE users SET username='$username', role_id=$role_id";
@@ -75,7 +58,16 @@ if ($status !== '') {
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
-$users = mysqli_query($conn, "SELECT u.*, r.role_name FROM users u JOIN user_roles r ON u.role_id = r.id $where_clause ORDER BY u.id");
+// Pagination
+$per_page = 10;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $per_page;
+
+$count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM users u $where_clause");
+$total_rows = mysqli_fetch_assoc($count_res)['total'];
+$total_pages = ceil($total_rows / $per_page);
+
+$users = mysqli_query($conn, "SELECT u.*, r.role_name FROM users u JOIN user_roles r ON u.role_id = r.id $where_clause ORDER BY u.id LIMIT $offset, $per_page");
 $roles = mysqli_query($conn, "SELECT * FROM user_roles");
 
 include '../includes/header.php';
@@ -83,8 +75,13 @@ include '../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
-        <h2><i class="bi bi-gear"></i> User Management</h2>
-        <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage system users and access controls</p>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2><i class="bi bi-gear"></i> User Management</h2>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage system users and access controls</p>
+            </div>
+            <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add User</a>
+        </div>
     </div>
 
     <div class="card mb-4 shadow-sm">
@@ -118,33 +115,6 @@ include '../includes/sidebar.php';
                     <?php if ($search || $role_id || $status !== ''): ?>
                     <a href="users.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="card mb-4">
-        <div class="card-header"><h5><i class="bi bi-person-plus"></i> Create New User</h5></div>
-        <div class="card-body">
-            <form method="POST" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter username" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter password" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Role</label>
-                    <select name="role_id" class="form-select" required>
-                        <option value="">Select Role</option>
-                        <?php while ($r = mysqli_fetch_assoc($roles)): ?>
-                        <option value="<?= $r['id'] ?>"><?= $r['role_name'] ?></option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" name="add_user" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> Add User</button>
                 </div>
             </form>
         </div>
@@ -192,6 +162,11 @@ include '../includes/sidebar.php';
             </table>
         </div>
     </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Showing <?= min($total_rows, $offset + 1) ?>-<?= min($total_rows, $offset + $per_page) ?> of <?= $total_rows ?> users</small>
+        <?php render_pagination($page, $total_pages); ?>
+    </div>
 </div>
 
 <div class="modal fade" id="editModal" tabindex="-1">
@@ -235,7 +210,6 @@ function showEdit(id, username, roleId) {
     var roleSelect = document.getElementById('edit_role_id');
     roleSelect.value = roleId;
     
-    // Disable role select if editing self
     roleSelect.disabled = (id == <?= $_SESSION['user_id'] ?>);
     
     new bootstrap.Modal(document.getElementById('editModal')).show();

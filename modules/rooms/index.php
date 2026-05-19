@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/pagination.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
@@ -20,7 +21,16 @@ if ($status !== '') {
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
-$rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id $where_clause ORDER BY r.id DESC");
+// Pagination
+$per_page = 10;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $per_page;
+
+$count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM rooms r $where_clause");
+$total_rows = mysqli_fetch_assoc($count_res)['total'];
+$total_pages = ceil($total_rows / $per_page);
+
+$rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id $where_clause ORDER BY r.id DESC LIMIT $offset, $per_page");
 $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
@@ -120,6 +130,11 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Showing <?= min($total_rows, $offset + 1) ?>-<?= min($total_rows, $offset + $per_page) ?> of <?= $total_rows ?> rooms</small>
+        <?php render_pagination($page, $total_pages); ?>
     </div>
 </div>
 <?php include '../../includes/footer.php'; ?>

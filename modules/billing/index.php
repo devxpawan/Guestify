@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/pagination.php';
 
 if (!has_role(['Admin', 'Cashier'])) {
     header('Location: ../../dashboard.php');
@@ -22,12 +23,21 @@ if ($status !== '') {
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
+// Pagination
+$per_page = 10;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $per_page;
+
+$count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM invoices i JOIN reservations r ON i.reservation_id = r.id JOIN customers c ON r.customer_id = c.id $where_clause");
+$total_rows = mysqli_fetch_assoc($count_res)['total'];
+$total_pages = ceil($total_rows / $per_page);
+
 $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
                                  FROM invoices i 
                                  JOIN reservations r ON i.reservation_id = r.id 
                                  JOIN customers c ON r.customer_id = c.id 
                                  $where_clause
-                                 ORDER BY i.id DESC");
+                                 ORDER BY i.id DESC LIMIT $offset, $per_page");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
@@ -109,6 +119,11 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Showing <?= min($total_rows, $offset + 1) ?>-<?= min($total_rows, $offset + $per_page) ?> of <?= $total_rows ?> invoices</small>
+        <?php render_pagination($page, $total_pages); ?>
     </div>
 </div>
 <?php include '../../includes/footer.php'; ?>

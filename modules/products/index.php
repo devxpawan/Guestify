@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/pagination.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
@@ -16,7 +17,16 @@ if ($category !== '') {
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
-$products = mysqli_query($conn, "SELECT * FROM products $where_clause ORDER BY id DESC");
+// Pagination
+$per_page = 10;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $per_page;
+
+$count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM products $where_clause");
+$total_rows = mysqli_fetch_assoc($count_res)['total'];
+$total_pages = ceil($total_rows / $per_page);
+
+$products = mysqli_query($conn, "SELECT * FROM products $where_clause ORDER BY id DESC LIMIT $offset, $per_page");
 $categories_res = mysqli_query($conn, "SELECT DISTINCT category FROM products ORDER BY category");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
@@ -95,6 +105,11 @@ $categories_res = mysqli_query($conn, "SELECT DISTINCT category FROM products OR
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Showing <?= min($total_rows, $offset + 1) ?>-<?= min($total_rows, $offset + $per_page) ?> of <?= $total_rows ?> products</small>
+        <?php render_pagination($page, $total_pages); ?>
     </div>
 </div>
 <?php include '../../includes/footer.php'; ?>
