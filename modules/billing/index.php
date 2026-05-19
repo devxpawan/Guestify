@@ -10,10 +10,23 @@ if (!has_role(['Admin', 'Cashier'])) {
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+$status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+
+$where = [];
+if ($search !== '') {
+    $where[] = "(c.full_name LIKE '%$search%' OR i.id = '" . (int)$search . "')";
+}
+if ($status !== '') {
+    $where[] = "i.payment_status = '$status'";
+}
+$where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
+
 $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
                                  FROM invoices i 
                                  JOIN reservations r ON i.reservation_id = r.id 
                                  JOIN customers c ON r.customer_id = c.id 
+                                 $where_clause
                                  ORDER BY i.id DESC");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
@@ -24,6 +37,33 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage invoices and payment tracking</p>
             </div>
             <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Invoice</a>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Invoice # or Customer Name..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Paid" <?= $status == 'Paid' ? 'selected' : '' ?>>Paid</option>
+                        <option value="Partial" <?= $status == 'Partial' ? 'selected' : '' ?>>Partial</option>
+                        <option value="Unpaid" <?= $status == 'Unpaid' ? 'selected' : '' ?>>Unpaid</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $status): ?>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
     </div>
 

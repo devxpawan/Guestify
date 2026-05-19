@@ -4,38 +4,33 @@ require_once '../../config/database.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $type_id = isset($_GET['type_id']) ? (int)$_GET['type_id'] : 0;
-$where_clause = "";
-$filter_name = "";
+$status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
 
-if ($type_id > 0) {
-    $where_clause = " WHERE r.room_type_id = $type_id ";
-    $type_res = mysqli_query($conn, "SELECT type_name FROM room_types WHERE id = $type_id");
-    if ($t_row = mysqli_fetch_assoc($type_res)) {
-        $filter_name = $t_row['type_name'];
-    }
+$where = [];
+if ($search !== '') {
+    $where[] = "r.room_number LIKE '%$search%'";
 }
+if ($type_id > 0) {
+    $where[] = "r.room_type_id = $type_id";
+}
+if ($status !== '') {
+    $where[] = "r.status = '$status'";
+}
+$where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
 $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id $where_clause ORDER BY r.id DESC");
+$types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h2><i class="bi bi-building"></i> Room Management</h2>
-                <?php if ($filter_name): ?>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="index.php" class="text-decoration-none">All Rooms</a></li>
-                        <li class="breadcrumb-item active">Type: <?= $filter_name ?></li>
-                    </ol>
-                </nav>
-                <?php endif; ?>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage your villa's accommodations and statuses</p>
             </div>
             <div class="d-flex gap-2">
-                <?php if ($type_id > 0): ?>
-                    <a href="index.php" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i> Clear Filter</a>
-                <?php endif; ?>
                 <?php if (has_role(['Admin'])): ?>
                 <a href="types.php" class="btn btn-outline-secondary"><i class="bi bi-tags"></i> Manage Types</a>
                 <?php endif; ?>
@@ -43,6 +38,41 @@ $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_typ
                 <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Room</a>
                 <?php endif; ?>
             </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Room No..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="type_id" class="form-select">
+                        <option value="">All Room Types</option>
+                        <?php while($t = mysqli_fetch_assoc($types_res)): ?>
+                        <option value="<?= $t['id'] ?>" <?= $type_id == $t['id'] ? 'selected' : '' ?>><?= $t['type_name'] ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Available" <?= $status == 'Available' ? 'selected' : '' ?>>Available</option>
+                        <option value="Occupied" <?= $status == 'Occupied' ? 'selected' : '' ?>>Occupied</option>
+                        <option value="Maintenance" <?= $status == 'Maintenance' ? 'selected' : '' ?>>Maintenance</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $type_id || $status): ?>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
     </div>
 

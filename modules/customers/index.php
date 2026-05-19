@@ -23,14 +23,23 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
         </div>
     </div>
 
-    <div class="search-box">
-        <form method="GET">
-            <div class="input-group">
-                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, NIC, or phone..." value="<?= htmlspecialchars($search) ?>">
-                <button class="btn btn-outline-secondary" type="submit">Search</button>
-            </div>
-        </form>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, NIC, or phone..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
+                    <?php if ($search): ?>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
     </div>
 
     <div class="table-container">

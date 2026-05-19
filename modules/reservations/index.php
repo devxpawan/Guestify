@@ -4,10 +4,23 @@ require_once '../../config/database.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+$status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+
+$where = [];
+if ($search !== '') {
+    $where[] = "(c.full_name LIKE '%$search%' OR r.id = '" . (int)$search . "')";
+}
+if ($status !== '') {
+    $where[] = "r.status = '$status'";
+}
+$where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
+
 $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number 
                                      FROM reservations r 
                                      JOIN customers c ON r.customer_id = c.id 
                                      JOIN rooms rm ON r.room_id = rm.id 
+                                     $where_clause
                                      ORDER BY r.id DESC");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
@@ -22,6 +35,35 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                 <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Reservation</a>
                 <?php endif; ?>
             </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Res ID or Customer Name..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Pending" <?= $status == 'Pending' ? 'selected' : '' ?>>Pending</option>
+                        <option value="Confirmed" <?= $status == 'Confirmed' ? 'selected' : '' ?>>Confirmed</option>
+                        <option value="Checked-In" <?= $status == 'Checked-In' ? 'selected' : '' ?>>Checked-In</option>
+                        <option value="Checked-Out" <?= $status == 'Checked-Out' ? 'selected' : '' ?>>Checked-Out</option>
+                        <option value="Cancelled" <?= $status == 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $status): ?>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -4,7 +4,20 @@ require_once '../../config/database.php';
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
-$products = mysqli_query($conn, "SELECT * FROM products ORDER BY id DESC");
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+$category = isset($_GET['category']) ? mysqli_real_escape_string($conn, $_GET['category']) : '';
+
+$where = [];
+if ($search !== '') {
+    $where[] = "product_name LIKE '%$search%'";
+}
+if ($category !== '') {
+    $where[] = "category = '$category'";
+}
+$where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
+
+$products = mysqli_query($conn, "SELECT * FROM products $where_clause ORDER BY id DESC");
+$categories_res = mysqli_query($conn, "SELECT DISTINCT category FROM products ORDER BY category");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
@@ -14,6 +27,33 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY id DESC");
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage inventory and product catalog</p>
             </div>
             <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Product</a>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search Product Name..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        <?php while($c = mysqli_fetch_assoc($categories_res)): ?>
+                        <option value="<?= htmlspecialchars($c['category']) ?>" <?= $category == $c['category'] ? 'selected' : '' ?>><?= htmlspecialchars($c['category']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $category): ?>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
     </div>
 

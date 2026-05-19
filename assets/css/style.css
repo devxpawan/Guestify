@@ -409,8 +409,8 @@ body.toggled .top-navbar {
 .page-header {
     background: #fff;
     border-radius: 12px;
-    padding: 1.5rem 2rem;
-    margin-bottom: 1.5rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.75rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
 }
@@ -551,7 +551,7 @@ body.toggled .top-navbar {
 }
 
 .card-body {
-    padding: 1.25rem;
+    padding: 0.75rem 1rem;
 }
 
 /* ── Tables ── */
@@ -731,35 +731,16 @@ body.toggled .top-navbar {
     border-left: 4px solid #06b6d4;
 }
 
-/* ── Search Box ── */
-.search-box {
-    background: #fff;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
-}
-
-.search-box .input-group {
+/* ── Filter Bar (inside card) ── */
+.card .input-group {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     overflow: hidden;
 }
 
-.search-box .form-control {
+.card .input-group .form-control {
     border: none;
     padding: 0.65rem 1rem;
-}
-
-.search-box .btn {
-    border: none;
-    background: #f8fafc;
-    color: #64748b;
-}
-
-.search-box .btn:hover {
-    background: #f1f5f9;
 }
 
 /* ── Calendar ── */

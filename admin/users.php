@@ -58,7 +58,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$users = mysqli_query($conn, "SELECT u.*, r.role_name FROM users u JOIN user_roles r ON u.role_id = r.id ORDER BY u.id");
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+$role_id = isset($_GET['role_id']) ? (int)$_GET['role_id'] : 0;
+$status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+
+$where = [];
+if ($search !== '') {
+    $where[] = "u.username LIKE '%$search%'";
+}
+if ($role_id > 0) {
+    $where[] = "u.role_id = $role_id";
+}
+if ($status !== '') {
+    if ($status === '1') $where[] = "u.status = 1";
+    if ($status === '0') $where[] = "u.status = 0";
+}
+$where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
+
+$users = mysqli_query($conn, "SELECT u.*, r.role_name FROM users u JOIN user_roles r ON u.role_id = r.id $where_clause ORDER BY u.id");
 $roles = mysqli_query($conn, "SELECT * FROM user_roles");
 
 include '../includes/header.php';
@@ -70,8 +87,41 @@ include '../includes/sidebar.php';
         <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage system users and access controls</p>
     </div>
 
-
-
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search Username..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="role_id" class="form-select">
+                        <option value="">All Roles</option>
+                        <?php 
+                        mysqli_data_seek($roles, 0);
+                        while($r = mysqli_fetch_assoc($roles)): ?>
+                        <option value="<?= $r['id'] ?>" <?= $role_id == $r['id'] ? 'selected' : '' ?>><?= $r['role_name'] ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="1" <?= $status === '1' ? 'selected' : '' ?>>Active</option>
+                        <option value="0" <?= $status === '0' ? 'selected' : '' ?>>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $role_id || $status !== ''): ?>
+                    <a href="users.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="card mb-4">
         <div class="card-header"><h5><i class="bi bi-person-plus"></i> Create New User</h5></div>
         <div class="card-body">
