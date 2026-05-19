@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $price = $prod['price'];
             $query = "INSERT INTO service_orders (reservation_id, product_id, quantity, price, status) 
-                      VALUES ($reservation_id, $product_id, $quantity, $price, 'Pending')";
+                      VALUES ($reservation_id, $product_id, $quantity, $price, 'Served')";
             
             if (mysqli_query($conn, $query)) {
                 mysqli_query($conn, "UPDATE products SET quantity = quantity - $quantity WHERE id=$product_id");
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$products = mysqli_query($conn, "SELECT * FROM products WHERE quantity > 0 ORDER BY product_name");
+$products = mysqli_query($conn, "SELECT * FROM products WHERE quantity > 0 AND is_active = 1 ORDER BY product_name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

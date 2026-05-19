@@ -109,7 +109,7 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                         <td>
                             <div class="action-btns">
                                 <a href="view.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-info" title="View"><i class="fas fa-eye"></i></a>
-                                <a href="payments.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-success" title="Pay"><i class="fas fa-credit-card"></i></a>
+                                <?php if ($inv['payment_status'] !== 'Paid'): ?><a href="payments.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-success" title="Pay"><i class="fas fa-credit-card"></i></a><?php endif; ?>
                                 <a href="print.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-secondary" target="_blank" title="Print"><i class="fas fa-print"></i></a>
                             </div>
                         </td>

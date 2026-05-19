@@ -28,6 +28,14 @@ $global_favicon = $branding['favicon_path'] ?? '';
 <nav class="navbar navbar-expand-lg top-navbar">
     <div class="container-fluid">
         <button class="btn" id="menu-toggle"><i class="bi bi-list fs-5"></i></button>
+        
+        <form action="<?= $base_url ?>modules/reservations/index.php" method="GET" class="d-none d-md-flex ms-3" style="width: 300px;">
+            <div class="input-group" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <span class="input-group-text bg-light border-0" style="padding: 0.4rem 0.6rem;"><i class="bi bi-search text-muted" style="font-size: 0.8rem;"></i></span>
+                <input type="text" name="search" class="form-control bg-light border-0" placeholder="Quick find reservation..." style="font-size: 0.8rem; padding: 0.4rem 0.5rem; outline: none; box-shadow: none;">
+            </div>
+        </form>
+
         <div class="ms-auto">
             <div class="dropdown">
                 <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">

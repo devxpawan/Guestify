@@ -8,11 +8,24 @@ if (!has_role(['Admin', 'Manager'])) {
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    $id = (int)$_POST['id'];
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM staff WHERE id=$id"));
+    if ($item) {
+        $new_status = $item['is_active'] ? 0 : 1;
+        mysqli_query($conn, "UPDATE staff SET is_active=$new_status WHERE id=$id");
+        $_SESSION['success'] = 'Staff status updated successfully!';
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $position = isset($_GET['position']) ? mysqli_real_escape_string($conn, $_GET['position']) : '';
+$is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
 
 $where = [];
 if ($search !== '') {
@@ -20,6 +33,9 @@ if ($search !== '') {
 }
 if ($position !== '') {
     $where[] = "position = '$position'";
+}
+if ($is_active_filter !== '') {
+    $where[] = "is_active = " . (int)$is_active_filter;
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
@@ -52,13 +68,13 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                         <input type="text" name="search" class="form-control border-start-0" placeholder="Search Name, Email, or Phone..." value="<?= htmlspecialchars($search) ?>">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <select name="position" class="form-select">
                         <option value="">All Positions</option>
                         <?php while($p = mysqli_fetch_assoc($positions_res)): ?>
@@ -66,9 +82,16 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
                         <?php endwhile; ?>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <select name="is_active" class="form-select">
+                        <option value="">All States</option>
+                        <option value="1" <?= $is_active_filter === '1' ? 'selected' : '' ?>>Active</option>
+                        <option value="0" <?= $is_active_filter === '0' ? 'selected' : '' ?>>Inactive</option>
+                    </select>
+                </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
-                    <?php if ($search || $position): ?>
+                    <?php if ($search || $position || $is_active_filter !== ''): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
@@ -81,7 +104,7 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th><th>Name</th><th>Position</th><th>Phone</th><th>Email</th><th>Salary</th><th>Actions</th>
+                        <th>ID</th><th>Name</th><th>Position</th><th>Phone</th><th>Email</th><th>Salary</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -101,9 +124,19 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
                         <td><i class="bi bi-envelope text-muted me-1"></i><?= htmlspecialchars($s['email']) ?></td>
                         <td><strong><?= htmlspecialchars($global_currency) ?><?= number_format($s['salary'], 2) ?></strong></td>
                         <td>
+                            <span class="badge badge-<?= $s['is_active'] ? 'success' : 'danger' ?>">
+                                <i class="bi bi-<?= $s['is_active'] ? 'check-circle' : 'x-circle' ?>"></i> <?= $s['is_active'] ? 'Active' : 'Inactive' ?>
+                            </span>
+                        </td>
+                        <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                                <a href="delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
+                                <form method="POST" style="display:inline">
+                                    <input type="hidden" name="id" value="<?= $s['id'] ?>">
+                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $s['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $s['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
+                                        <i class="fas fa-<?= $s['is_active'] ? 'ban' : 'check' ?>"></i>
+                                    </button>
+                                </form>
+                                <a href="edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></a>
                             </div>
                         </td>
                     </tr>

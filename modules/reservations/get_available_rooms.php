@@ -37,7 +37,7 @@ if ($booking_type === 'Day Time') {
 $query = "SELECT r.id, r.room_number, t.type_name, $price_field AS price 
           FROM rooms r 
           JOIN room_types t ON r.room_type_id = t.id 
-          WHERE r.status != 'Maintenance' 
+          WHERE r.status != 'Maintenance' AND r.is_active = 1 
           $type_cond
           AND r.id NOT IN (
               SELECT DISTINCT room_id FROM reservations 

@@ -125,21 +125,37 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                             </span>
                         </td>
                         <td>
-                            <div class="action-btns">
+                            <div class="action-btns d-flex gap-1 align-items-center">
                                 <?php if ($r['status'] == 'Pending'): ?>
                                 <a href="edit.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Pending'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Confirmed" class="btn btn-sm btn-success" title="Confirm"><i class="fas fa-check-circle"></i></a>
+                                <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Confirm reservation #<?= $r['id'] ?>?');">
+                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                    <input type="hidden" name="status" value="Confirmed">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Confirm"><i class="fas fa-check-circle"></i></button>
+                                </form>
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Confirmed'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Checked-In" class="btn btn-sm btn-info" title="Check-In"><i class="fas fa-sign-in-alt"></i></a>
+                                <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Check-In guest for reservation #<?= $r['id'] ?>?');">
+                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                    <input type="hidden" name="status" value="Checked-In">
+                                    <button type="submit" class="btn btn-sm btn-info" title="Check-In"><i class="fas fa-sign-in-alt"></i></button>
+                                </form>
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Checked-In'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Checked-Out" class="btn btn-sm btn-secondary" title="Check-Out"><i class="fas fa-sign-out-alt"></i></a>
+                                <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Check-Out guest for reservation #<?= $r['id'] ?>?');">
+                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                    <input type="hidden" name="status" value="Checked-Out">
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Check-Out"><i class="fas fa-sign-out-alt"></i></button>
+                                </form>
                                 <?php endif; ?>
                                 <?php if ($r['status'] != 'Cancelled' && $r['status'] != 'Checked-Out'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Cancelled" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this reservation? This will free up the room.')" title="Cancel"><i class="fas fa-times-circle"></i></a>
+                                <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Cancel reservation #<?= $r['id'] ?>? This will free up the room.');">
+                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                    <input type="hidden" name="status" value="Cancelled">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancel"><i class="fas fa-times-circle"></i></button>
+                                </form>
                                 <?php endif; ?>
                             </div>
                         </td>

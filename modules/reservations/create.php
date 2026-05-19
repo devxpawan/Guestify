@@ -10,7 +10,7 @@ if (!has_role(['Admin', 'Receptionist'])) {
 $error = '';
 $success = '';
 
-$customers = mysqli_query($conn, "SELECT * FROM customers ORDER BY full_name");
+$customers = mysqli_query($conn, "SELECT * FROM customers WHERE is_active = 1 ORDER BY full_name");
 $room_types = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

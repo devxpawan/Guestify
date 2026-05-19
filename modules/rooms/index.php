@@ -2,12 +2,31 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    if (!has_role(['Admin'])) {
+        $_SESSION['error'] = 'Permission denied.';
+        header("Location: index.php");
+        exit();
+    }
+    $id = (int)$_POST['id'];
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM rooms WHERE id=$id"));
+    if ($item) {
+        $new_status = $item['is_active'] ? 0 : 1;
+        mysqli_query($conn, "UPDATE rooms SET is_active=$new_status WHERE id=$id");
+        $_SESSION['success'] = 'Room status updated successfully!';
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $type_id = isset($_GET['type_id']) ? (int)$_GET['type_id'] : 0;
 $status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+$is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
 
 $where = [];
 if ($search !== '') {
@@ -18,6 +37,9 @@ if ($type_id > 0) {
 }
 if ($status !== '') {
     $where[] = "r.status = '$status'";
+}
+if ($is_active_filter !== '') {
+    $where[] = "r.is_active = " . (int)$is_active_filter;
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
@@ -60,7 +82,7 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                         <input type="text" name="search" class="form-control border-start-0" placeholder="Room No..." value="<?= htmlspecialchars($search) ?>">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select name="type_id" class="form-select">
                         <option value="">All Room Types</option>
                         <?php while($t = mysqli_fetch_assoc($types_res)): ?>
@@ -68,7 +90,7 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                         <?php endwhile; ?>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select name="status" class="form-select">
                         <option value="">All Statuses</option>
                         <option value="Available" <?= $status == 'Available' ? 'selected' : '' ?>>Available</option>
@@ -76,9 +98,16 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                         <option value="Maintenance" <?= $status == 'Maintenance' ? 'selected' : '' ?>>Maintenance</option>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <select name="is_active" class="form-select">
+                        <option value="">All States</option>
+                        <option value="1" <?= $is_active_filter === '1' ? 'selected' : '' ?>>Active</option>
+                        <option value="0" <?= $is_active_filter === '0' ? 'selected' : '' ?>>Inactive</option>
+                    </select>
+                </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
-                    <?php if ($search || $type_id || $status): ?>
+                    <?php if ($search || $type_id || $status || $is_active_filter !== ''): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
@@ -113,16 +142,24 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                             <div class="small text-muted">Short: <strong class="text-dark"><?= htmlspecialchars($global_currency) ?><?= number_format($row['price_short'], 2) ?></strong></div>
                         </td>
                         <td>
-                            <span class="badge badge-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?>">
+                            <span class="badge badge-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?> mb-1 d-block">
                                 <i class="bi bi-<?= $row['status'] == 'Available' ? 'check-circle' : ($row['status'] == 'Occupied' ? 'x-circle' : 'clock') ?>"></i> <?= $row['status'] ?>
+                            </span>
+                            <span class="badge badge-<?= $row['is_active'] ? 'success' : 'danger' ?> d-block">
+                                <i class="bi bi-<?= $row['is_active'] ? 'check-circle' : 'x-circle' ?>"></i> <?= $row['is_active'] ? 'Active' : 'Inactive' ?>
                             </span>
                         </td>
                         <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
                                 <?php if (has_role(['Admin'])): ?>
-                                <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
+                                <form method="POST" style="display:inline">
+                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $row['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $row['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
+                                        <i class="fas fa-<?= $row['is_active'] ? 'ban' : 'check' ?>"></i>
+                                    </button>
+                                </form>
                                 <?php endif; ?>
+                                <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></a>
                             </div>
                         </td>
                     </tr>

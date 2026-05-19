@@ -2,11 +2,30 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    if (!has_role(['Admin', 'Manager'])) {
+        $_SESSION['error'] = 'Permission denied.';
+        header("Location: index.php");
+        exit();
+    }
+    $id = (int)$_POST['id'];
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM products WHERE id=$id"));
+    if ($item) {
+        $new_status = $item['is_active'] ? 0 : 1;
+        mysqli_query($conn, "UPDATE products SET is_active=$new_status WHERE id=$id");
+        $_SESSION['success'] = 'Product status updated successfully!';
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $category = isset($_GET['category']) ? mysqli_real_escape_string($conn, $_GET['category']) : '';
+$is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
 
 $where = [];
 if ($search !== '') {
@@ -14,6 +33,9 @@ if ($search !== '') {
 }
 if ($category !== '') {
     $where[] = "category = '$category'";
+}
+if ($is_active_filter !== '') {
+    $where[] = "is_active = " . (int)$is_active_filter;
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
@@ -46,13 +68,13 @@ $categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                         <input type="text" name="search" class="form-control border-start-0" placeholder="Search Product Name..." value="<?= htmlspecialchars($search) ?>">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <select name="category" class="form-select">
                         <option value="">All Categories</option>
                         <?php while($c = mysqli_fetch_assoc($categories_res)): ?>
@@ -60,9 +82,16 @@ $categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM
                         <?php endwhile; ?>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <select name="is_active" class="form-select">
+                        <option value="">All States</option>
+                        <option value="1" <?= $is_active_filter === '1' ? 'selected' : '' ?>>Active</option>
+                        <option value="0" <?= $is_active_filter === '0' ? 'selected' : '' ?>>Inactive</option>
+                    </select>
+                </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
-                    <?php if ($search || $category): ?>
+                    <?php if ($search || $category || $is_active_filter !== ''): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
@@ -75,7 +104,7 @@ $categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th><th>Product Name</th><th>Category</th><th>Quantity</th><th>Price</th><th>Actions</th>
+                        <th>ID</th><th>Product Name</th><th>Category</th><th>Quantity</th><th>Price</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,9 +127,19 @@ $categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM
                         </td>
                         <td><strong><?= htmlspecialchars($global_currency) . number_format($p['price'], 2) ?></strong></td>
                         <td>
+                            <span class="badge badge-<?= $p['is_active'] ? 'success' : 'danger' ?>">
+                                <i class="bi bi-<?= $p['is_active'] ? 'check-circle' : 'x-circle' ?>"></i> <?= $p['is_active'] ? 'Active' : 'Inactive' ?>
+                            </span>
+                        </td>
+                        <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                                <a href="delete.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
+                                <form method="POST" style="display:inline">
+                                    <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $p['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $p['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
+                                        <i class="fas fa-<?= $p['is_active'] ? 'ban' : 'check' ?>"></i>
+                                    </button>
+                                </form>
+                                <a href="edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></a>
                             </div>
                         </td>
                     </tr>

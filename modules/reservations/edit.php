@@ -14,7 +14,7 @@ if (!$res || $res['status'] !== 'Pending') {
     exit();
 }
 
-$customers = mysqli_query($conn, "SELECT * FROM customers ORDER BY full_name");
+$customers = mysqli_query($conn, "SELECT * FROM customers WHERE is_active = 1 OR id = {$res['customer_id']} ORDER BY full_name");
 $room_types = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 $current_room_id = (int)$res['room_id'];
 $current_room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT room_type_id FROM rooms WHERE id = $current_room_id"));

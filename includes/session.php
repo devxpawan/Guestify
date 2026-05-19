@@ -10,6 +10,7 @@ $depth = substr_count(trim($relative_path, DIRECTORY_SEPARATOR), DIRECTORY_SEPAR
 
 $base_url = str_repeat('../', $depth);
 if ($depth == 0) $base_url = './';
+$normalized_path = '/' . ltrim(str_replace(DIRECTORY_SEPARATOR, '/', $relative_path), '/');
 
 if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'login.php') {
     header('Location: ' . $base_url . 'login.php');
@@ -19,5 +20,18 @@ if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'login.php
 function has_role($roles) {
     $allowed = is_array($roles) ? $roles : [$roles];
     return isset($_SESSION['role']) && in_array($_SESSION['role'], $allowed);
+}
+
+function is_active_link($urls) {
+    global $normalized_path;
+    if (!is_array($urls)) {
+        $urls = [$urls];
+    }
+    foreach ($urls as $url) {
+        if (strpos($normalized_path, $url) !== false) {
+            return true;
+        }
+    }
+    return false;
 }
 ?>

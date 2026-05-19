@@ -11,6 +11,11 @@ if (!has_role(['Admin'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['toggle_status'])) {
         $uid = (int)$_POST['user_id'];
+        if ($uid == $_SESSION['user_id']) {
+            $_SESSION['error'] = 'You cannot deactivate your own account.';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
+        }
         $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT status FROM users WHERE id=$uid"));
         $new_status = $user['status'] ? 0 : 1;
         mysqli_query($conn, "UPDATE users SET status=$new_status WHERE id=$uid");
@@ -151,13 +156,12 @@ include '../includes/sidebar.php';
                         <td><small class="text-muted"><?= date('M d, Y', strtotime($u['created_at'])) ?></small></td>
                         <td>
                             <div class="action-btns">
-                                <form method="POST" style="display:inline">
-                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $u['status'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $u['status'] ? 'Deactivate' : 'Activate' ?>">
-                                        <i class="fas fa-<?= $u['status'] ? 'ban' : 'check' ?>"></i>
-                                    </button>
-                                </form>
-                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)" title="Edit"><i class="fas fa-pencil-alt"></i></button>
+                                <?php if ($u['id'] != $_SESSION['user_id']): ?>
+                                <button type="button" class="btn btn-sm btn-<?= $u['status'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $u['status'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;" onclick="showToggleConfirm(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['status'] ?>)">
+                                    <i class="fas fa-<?= $u['status'] ? 'ban' : 'check' ?>"></i>
+                                </button>
+                                <?php endif; ?>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -206,7 +210,37 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<div class="modal fade" id="toggleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" class="modal-content">
+            <div class="modal-body text-center py-4">
+                <input type="hidden" name="user_id" id="toggle_user_id">
+                <input type="hidden" name="toggle_status" value="1">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                </div>
+                <h5 id="toggle_modal_title">Confirm</h5>
+                <p class="text-muted mb-0" id="toggle_modal_message"></p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0">
+                <button type="submit" class="btn btn-warning" id="toggle_confirm_btn"><i class="fas fa-check"></i> Yes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> No</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+function showToggleConfirm(id, username, status) {
+    document.getElementById('toggle_user_id').value = id;
+    document.getElementById('toggle_modal_title').textContent = status ? 'Deactivate User?' : 'Activate User?';
+    document.getElementById('toggle_modal_message').textContent = 'Are you sure you want to ' + (status ? 'deactivate' : 'activate') + ' "' + username + '"?';
+    var btn = document.getElementById('toggle_confirm_btn');
+    btn.className = 'btn btn-' + (status ? 'warning' : 'success');
+    btn.innerHTML = '<i class="fas fa-check"></i> Yes, ' + (status ? 'Deactivate' : 'Activate');
+    new bootstrap.Modal(document.getElementById('toggleModal')).show();
+}
+
 function showEdit(id, username, roleId) {
     document.getElementById('edit_user_id').value = id;
     document.getElementById('edit_username').value = username;

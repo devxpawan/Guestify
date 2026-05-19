@@ -2,15 +2,34 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    $id = (int)$_POST['id'];
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM customers WHERE id=$id"));
+    if ($item) {
+        $new_status = $item['is_active'] ? 0 : 1;
+        mysqli_query($conn, "UPDATE customers SET is_active=$new_status WHERE id=$id");
+        $_SESSION['success'] = 'Customer status updated successfully!';
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
 $search = '';
-$where = '';
+$is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
+
+$where_arr = [];
 if (isset($_GET['search']) && trim($_GET['search']) !== '') {
     $search = mysqli_real_escape_string($conn, $_GET['search']);
-    $where = "WHERE full_name LIKE '%$search%' OR nic_passport LIKE '%$search%' OR phone LIKE '%$search%'";
+    $where_arr[] = "(full_name LIKE '%$search%' OR nic_passport LIKE '%$search%' OR phone LIKE '%$search%')";
 }
+if ($is_active_filter !== '') {
+    $where_arr[] = "is_active = " . (int)$is_active_filter;
+}
+$where = count($where_arr) > 0 ? "WHERE " . implode(" AND ", $where_arr) : "";
 
 // Pagination
 $per_page = 10;
@@ -37,15 +56,22 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-9">
+                <div class="col-md-7">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                         <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, NIC, or phone..." value="<?= htmlspecialchars($search) ?>">
                     </div>
                 </div>
+                <div class="col-md-2">
+                    <select name="is_active" class="form-select">
+                        <option value="">All States</option>
+                        <option value="1" <?= $is_active_filter === '1' ? 'selected' : '' ?>>Active</option>
+                        <option value="0" <?= $is_active_filter === '0' ? 'selected' : '' ?>>Inactive</option>
+                    </select>
+                </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
-                    <?php if ($search): ?>
+                    <?php if ($search || $is_active_filter !== ''): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
@@ -58,7 +84,7 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th><th>Full Name</th><th>NIC/Passport</th><th>Phone</th><th>Email</th><th>Address</th><th>Actions</th>
+                        <th>ID</th><th>Full Name</th><th>NIC/Passport</th><th>Phone</th><th>Email</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,11 +102,20 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
                         <td><code><?= htmlspecialchars($c['nic_passport']) ?></code></td>
                         <td><i class="bi bi-telephone text-muted me-1"></i><?= htmlspecialchars($c['phone']) ?></td>
                         <td><i class="bi bi-envelope text-muted me-1"></i><?= htmlspecialchars($c['email']) ?></td>
-                        <td><i class="bi bi-geo-alt text-muted me-1"></i><?= htmlspecialchars($c['address']) ?></td>
+                        <td>
+                            <span class="badge badge-<?= $c['is_active'] ? 'success' : 'danger' ?>">
+                                <i class="bi bi-<?= $c['is_active'] ? 'check-circle' : 'x-circle' ?>"></i> <?= $c['is_active'] ? 'Active' : 'Inactive' ?>
+                            </span>
+                        </td>
                         <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                                <a href="delete.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
+                                <form method="POST" style="display:inline">
+                                    <input type="hidden" name="id" value="<?= $c['id'] ?>">
+                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $c['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $c['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
+                                        <i class="fas fa-<?= $c['is_active'] ? 'ban' : 'check' ?>"></i>
+                                    </button>
+                                </form>
+                                <a href="edit.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></a>
                             </div>
                         </td>
                     </tr>
