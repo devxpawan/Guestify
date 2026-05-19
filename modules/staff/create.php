@@ -16,10 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = mysqli_real_escape_string($conn, $_POST['name']);
     $position = mysqli_real_escape_string($conn, $_POST['position']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $nic = mysqli_real_escape_string($conn, $_POST['nic']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $salary = (float)$_POST['salary'];
+    $salary = !empty($_POST['salary']) ? (float)$_POST['salary'] : 0;
 
-    $query = "INSERT INTO staff (name, position, phone, email, salary) VALUES ('$name', '$position', '$phone', '$email', $salary)";
+    $query = "INSERT INTO staff (name, position, phone, nic, email, salary) VALUES ('$name', '$position', '$phone', '$nic', '$email', $salary)";
     if (mysqli_query($conn, $query)) {
         $_SESSION['success'] = 'Staff added successfully!';
         header("Location: index.php");
@@ -56,12 +57,16 @@ include '../../includes/sidebar.php';
                     <input type="text" name="phone" class="form-control" required>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">NIC Number</label>
+                    <input type="text" name="nic" class="form-control" required>
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Salary</label>
-                    <input type="number" step="0.01" name="salary" class="form-control" required>
+                    <input type="number" step="0.01" name="salary" class="form-control">
                 </div>
                 <button type="submit" class="btn btn-primary">Save Staff</button>
                 <a href="index.php" class="btn btn-secondary">Cancel</a>

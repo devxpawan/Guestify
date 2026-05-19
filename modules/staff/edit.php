@@ -22,10 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = mysqli_real_escape_string($conn, $_POST['name']);
     $position = mysqli_real_escape_string($conn, $_POST['position']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $nic = mysqli_real_escape_string($conn, $_POST['nic']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $salary = (float)$_POST['salary'];
+    $salary = !empty($_POST['salary']) ? (float)$_POST['salary'] : 0;
 
-    $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', email='$email', salary=$salary WHERE id=$id";
+    $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', nic='$nic', email='$email', salary=$salary WHERE id=$id";
     if (mysqli_query($conn, $query)) {
         $_SESSION['success'] = 'Staff updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);
@@ -63,12 +64,16 @@ include '../../includes/sidebar.php';
                     <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($staff['phone']) ?>" required>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">NIC Number</label>
+                    <input type="text" name="nic" class="form-control" value="<?= htmlspecialchars($staff['nic']) ?>" required>
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($staff['email']) ?>">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Salary</label>
-                    <input type="number" step="0.01" name="salary" class="form-control" value="<?= $staff['salary'] ?>" required>
+                    <input type="number" step="0.01" name="salary" class="form-control" value="<?= $staff['salary'] ?>">
                 </div>
                 <button type="submit" class="btn btn-primary">Update</button>
                 <a href="index.php" class="btn btn-secondary">Cancel</a>

@@ -104,7 +104,7 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th><th>Name</th><th>Position</th><th>Phone</th><th>Email</th><th>Salary</th><th>Status</th><th>Actions</th>
+                        <th>ID</th><th>Name</th><th>Position</th><th>Phone</th><th>NIC</th><th>Email</th><th>Salary</th><th>Status</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -121,6 +121,7 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
                         </td>
                         <td><span class="badge badge-purple"><?= htmlspecialchars($s['position']) ?></span></td>
                         <td><i class="bi bi-telephone text-muted me-1"></i><?= htmlspecialchars($s['phone']) ?></td>
+                        <td><?= htmlspecialchars($s['nic']) ?></td>
                         <td><i class="bi bi-envelope text-muted me-1"></i><?= htmlspecialchars($s['email']) ?></td>
                         <td><strong><?= htmlspecialchars($global_currency) ?><?= number_format($s['salary'], 2) ?></strong></td>
                         <td>

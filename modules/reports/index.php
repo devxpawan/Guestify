@@ -16,12 +16,82 @@ $occupancy = mysqli_query($conn, "SELECT rm.room_number, t.type_name, rm.status 
 $top_customers = mysqli_query($conn, "SELECT c.full_name, COUNT(r.id) as bookings, COALESCE(SUM(i.grand_total),0) as spent FROM customers c LEFT JOIN reservations r ON c.id = r.customer_id LEFT JOIN invoices i ON r.id = i.reservation_id GROUP BY c.id ORDER BY spent DESC LIMIT 5");
 $staff_report = mysqli_query($conn, "SELECT position, COUNT(*) as total, SUM(salary) as total_salary FROM staff GROUP BY position");
 $product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SUM(total) as total FROM invoice_items WHERE item_type='Product' GROUP BY item_name ORDER BY total DESC LIMIT 5");
+
+// Income vs Expense summary
+$finance = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT
+        COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS total_income,
+        COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS total_expense
+    FROM transactions
+"));
+$finance_monthly = mysqli_query($conn, "
+    SELECT
+        DATE_FORMAT(transaction_date, '%Y-%m') as month,
+        COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS income,
+        COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS expense
+    FROM transactions
+    GROUP BY month ORDER BY month DESC LIMIT 6
+");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
         <h2><i class="bi bi-graph-up"></i> Reports & Analytics</h2>
         <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Comprehensive business insights and performance metrics</p>
     </div>
+
+    <!-- Profit & Loss Summary -->
+    <?php if ($finance['total_income'] > 0 || $finance['total_expense'] > 0): ?>
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5><i class="bi bi-bar-chart-line"></i> Income & Expenses Overview</h5></div>
+                <div class="card-body">
+                    <div class="row text-center g-3">
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Total Income</p>
+                            <h4 class="text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_income'], 2) ?></h4>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Total Expenses</p>
+                            <h4 class="text-danger"><?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_expense'], 2) ?></h4>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Net Profit</p>
+                            <h4 class="<?= ($finance['total_income'] - $finance['total_expense']) >= 0 ? 'text-primary' : 'text-danger' ?>">
+                                <?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_income'] - $finance['total_expense'], 2) ?>
+                            </h4>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Profit Margin</p>
+                            <h4 class="text-info">
+                                <?= $finance['total_income'] > 0 ? number_format(($finance['total_income'] - $finance['total_expense']) / $finance['total_income'] * 100, 1) : 0 ?>%
+                            </h4>
+                        </div>
+                    </div>
+                    <?php if (mysqli_num_rows($finance_monthly) > 0): ?>
+                    <hr>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead><tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th></tr></thead>
+                            <tbody>
+                                <?php while ($fm = mysqli_fetch_assoc($finance_monthly)): ?>
+                                <?php $net = $fm['income'] - $fm['expense']; ?>
+                                <tr>
+                                    <td><strong><?= $fm['month'] ?></strong></td>
+                                    <td class="text-success">+<?= htmlspecialchars($global_currency) ?><?= number_format($fm['income'], 2) ?></td>
+                                    <td class="text-danger">-<?= htmlspecialchars($global_currency) ?><?= number_format($fm['expense'], 2) ?></td>
+                                    <td><strong class="<?= $net >= 0 ? 'text-success' : 'text-danger' ?>"><?= htmlspecialchars($global_currency) ?><?= number_format($net, 2) ?></strong></td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="row">
         <div class="col-md-6 mb-3">

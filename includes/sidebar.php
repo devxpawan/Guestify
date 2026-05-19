@@ -110,13 +110,19 @@
                 </div>
             </div>
 
-            <?php if (has_role(['Admin', 'Cashier'])): ?>
+            <?php if (has_role(['Admin', 'Cashier', 'Manager'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Finance</div>
+                <a href="<?= $base_url ?>modules/finance/index.php" class="sidebar-link <?= is_active_link(['/modules/finance/index.php', '/modules/finance/create.php', '/modules/finance/edit.php', '/modules/finance/categories.php']) ? 'active' : '' ?>" data-page="finance">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Income & Expenses</span>
+                </a>
+                <?php if (has_role(['Admin', 'Cashier'])): ?>
                 <a href="<?= $base_url ?>modules/billing/index.php" class="sidebar-link <?= is_active_link(['/modules/billing/index.php', '/modules/billing/create.php', '/modules/billing/payments.php', '/modules/billing/view.php', '/modules/billing/print.php']) ? 'active' : '' ?>" data-page="billing">
                     <i class="bi bi-receipt"></i>
                     <span>Billing</span>
                 </a>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
