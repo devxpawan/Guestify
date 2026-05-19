@@ -27,7 +27,7 @@ $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
 $products = mysqli_query($conn, "SELECT * FROM products $where_clause ORDER BY id DESC LIMIT $offset, $per_page");
-$categories_res = mysqli_query($conn, "SELECT DISTINCT category FROM products ORDER BY category");
+$categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM product_categories ORDER BY category_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
@@ -36,7 +36,10 @@ $categories_res = mysqli_query($conn, "SELECT DISTINCT category FROM products OR
                 <h2><i class="bi bi-box-seam"></i> Product Management</h2>
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage inventory and product catalog</p>
             </div>
-            <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Product</a>
+            <div class="d-flex gap-2">
+                <a href="categories.php" class="btn btn-outline-secondary"><i class="fas fa-tags"></i> Manage Categories</a>
+                <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Product</a>
+            </div>
         </div>
     </div>
 
@@ -93,11 +96,11 @@ $categories_res = mysqli_query($conn, "SELECT DISTINCT category FROM products OR
                                 <?= $p['quantity'] ?> in stock
                             </span>
                         </td>
-                        <td><strong>$<?= number_format($p['price'], 2) ?></strong></td>
+                        <td><strong><?= htmlspecialchars($global_currency) . number_format($p['price'], 2) ?></strong></td>
                         <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                                <a href="delete.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="bi bi-trash"></i></a>
+                                <a href="edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <a href="delete.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
                             </div>
                         </td>
                     </tr>

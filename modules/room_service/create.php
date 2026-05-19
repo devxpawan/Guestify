@@ -82,7 +82,7 @@ include '../../includes/sidebar.php';
                             <select name="product_id" class="form-control" required>
                                 <option value="">Choose item...</option>
                                 <?php while ($p = mysqli_fetch_assoc($products)): ?>
-                                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['product_name']) ?> - $<?= number_format($p['price'], 2) ?> (Stock: <?= $p['quantity'] ?>)</option>
+                                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['product_name']) ?> - <?= htmlspecialchars($global_currency) ?><?= number_format($p['price'], 2) ?> (Stock: <?= $p['quantity'] ?>)</option>
                                 <?php endwhile; ?>
                             </select>
                         </div>

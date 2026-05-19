@@ -33,7 +33,7 @@ $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
 $staff = mysqli_query($conn, "SELECT * FROM staff $where_clause ORDER BY id DESC LIMIT $offset, $per_page");
-$positions_res = mysqli_query($conn, "SELECT DISTINCT position FROM staff ORDER BY position");
+$positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM staff_positions ORDER BY position_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
@@ -42,7 +42,10 @@ $positions_res = mysqli_query($conn, "SELECT DISTINCT position FROM staff ORDER 
                 <h2><i class="bi bi-person-badge"></i> Staff Management</h2>
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage team members and positions</p>
             </div>
-            <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Staff</a>
+            <div class="d-flex gap-2">
+                <a href="positions.php" class="btn btn-outline-secondary"><i class="fas fa-tags"></i> Manage Positions</a>
+                <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Staff</a>
+            </div>
         </div>
     </div>
     
@@ -96,11 +99,11 @@ $positions_res = mysqli_query($conn, "SELECT DISTINCT position FROM staff ORDER 
                         <td><span class="badge badge-purple"><?= htmlspecialchars($s['position']) ?></span></td>
                         <td><i class="bi bi-telephone text-muted me-1"></i><?= htmlspecialchars($s['phone']) ?></td>
                         <td><i class="bi bi-envelope text-muted me-1"></i><?= htmlspecialchars($s['email']) ?></td>
-                        <td><strong>$<?= number_format($s['salary'], 2) ?></strong></td>
+                        <td><strong><?= htmlspecialchars($global_currency) ?><?= number_format($s['salary'], 2) ?></strong></td>
                         <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                                <a href="delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="bi bi-trash"></i></a>
+                                <a href="edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <a href="delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
                             </div>
                         </td>
                     </tr>

@@ -150,10 +150,10 @@ include '../includes/sidebar.php';
                                 <form method="POST" style="display:inline">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $u['status'] ? 'outline-warning' : 'outline-success' ?>">
-                                        <i class="bi bi-<?= $u['status'] ? 'pause' : 'play' ?>"></i> <?= $u['status'] ? 'Deactivate' : 'Activate' ?>
+                                        <i class="fas fa-<?= $u['status'] ? 'pause' : 'play' ?>"></i> <?= $u['status'] ? 'Deactivate' : 'Activate' ?>
                                     </button>
                                 </form>
-                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)"><i class="bi bi-pencil"></i> Edit</button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)"><i class="fas fa-pencil-alt"></i> Edit</button>
                             </div>
                         </td>
                     </tr>

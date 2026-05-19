@@ -14,6 +14,9 @@ if (!$room) {
     exit();
 }
 
+$branding = mysqli_fetch_assoc(mysqli_query($conn, "SELECT company_name FROM settings LIMIT 1"));
+$company_name = $branding['company_name'] ?? 'Villa';
+
 $types = mysqli_query($conn, "SELECT * FROM room_types");
 $error = '';
 $success = '';
@@ -41,7 +44,8 @@ $success = '';
                 $safe_room_number = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $room_number);
                 $safe_type_name = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $type_name);
 
-                $image_name = 'room_' . $safe_room_number . '_' . $safe_type_name . '.' . $ext;
+                $safe_company = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $company_name);
+                $image_name = $safe_company . '_room_' . $safe_room_number . '_' . $safe_type_name . '.' . $ext;
                 if (!is_dir('../../uploads')) {
                     mkdir('../../uploads', 0777, true);
                 }

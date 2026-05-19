@@ -9,6 +9,7 @@ if (!has_role(['Admin', 'Manager'])) {
 
 $id = (int)$_GET['id'];
 $staff = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM staff WHERE id=$id"));
+$positions_query = mysqli_query($conn, "SELECT * FROM staff_positions ORDER BY position_name");
 if (!$staff) {
     header('Location: index.php');
     exit();
@@ -50,7 +51,12 @@ include '../../includes/sidebar.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Position</label>
-                    <input type="text" name="position" class="form-control" value="<?= htmlspecialchars($staff['position']) ?>" required>
+                    <select name="position" class="form-select" required>
+                        <option value="">Select Position</option>
+                        <?php while ($pos = mysqli_fetch_assoc($positions_query)): ?>
+                        <option value="<?= htmlspecialchars($pos['position_name']) ?>" <?= $staff['position'] == $pos['position_name'] ? 'selected' : '' ?>><?= htmlspecialchars($pos['position_name']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Phone</label>

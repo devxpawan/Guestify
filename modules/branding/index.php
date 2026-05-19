@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle Logo Upload
     if (!empty($_FILES['logo']['name'])) {
         $logo_ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-        $logo_name = 'logo_' . date('YmdHis') . '.' . $logo_ext;
+        $safe_company = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $company_name);
+        $logo_name = $safe_company . '_logo_' . date('YmdHis') . '.' . $logo_ext;
         $logo_target = '../../uploads/' . $logo_name;
         if (move_uploaded_file($_FILES['logo']['tmp_name'], $logo_target)) {
             $update_query .= ", logo_path = '$logo_name'";
@@ -36,7 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle Favicon Upload
     if (!empty($_FILES['favicon']['name'])) {
         $favicon_ext = pathinfo($_FILES['favicon']['name'], PATHINFO_EXTENSION);
-        $favicon_name = 'fav_' . date('YmdHis') . '.' . $favicon_ext;
+        $safe_company = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $company_name);
+        $favicon_name = $safe_company . '_fav_' . date('YmdHis') . '.' . $favicon_ext;
         $favicon_target = '../../uploads/' . $favicon_name;
         if (move_uploaded_file($_FILES['favicon']['tmp_name'], $favicon_target)) {
             $update_query .= ", favicon_path = '$favicon_name'";

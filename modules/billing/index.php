@@ -82,7 +82,7 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Invoice #</th><th>Customer</th><th>Room Charges</th><th>Product Charges</th><th>Tax</th><th>Discount</th><th>Total</th><th>Payment</th><th>Actions</th>
+                        <th>Invoice #</th><th>Customer</th><th>Room Charges</th><th>Product Charges</th><th>Discount</th><th>Total</th><th>Payment</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -99,7 +99,6 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                         </td>
                         <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['room_charges'], 2) ?></td>
                         <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['product_charges'], 2) ?></td>
-                        <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['tax'], 2) ?></td>
                         <td class="text-success">-<?= htmlspecialchars($global_currency) ?><?= number_format($inv['discount'], 2) ?></td>
                         <td><strong class="text-primary"><?= htmlspecialchars($global_currency) ?><?= number_format($inv['grand_total'], 2) ?></strong></td>
                         <td>
@@ -109,9 +108,9 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                         </td>
                         <td>
                             <div class="action-btns">
-                                <a href="view.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
-                                <a href="payments.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-success" title="Pay"><i class="bi bi-credit-card"></i></a>
-                                <a href="print.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-secondary" target="_blank" title="Print"><i class="bi bi-printer"></i></a>
+                                <a href="view.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-info" title="View"><i class="fas fa-eye"></i></a>
+                                <a href="payments.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-success" title="Pay"><i class="fas fa-credit-card"></i></a>
+                                <a href="print.php?id=<?= $inv['id'] ?>" class="btn btn-sm btn-outline-secondary" target="_blank" title="Print"><i class="fas fa-print"></i></a>
                             </div>
                         </td>
                     </tr>

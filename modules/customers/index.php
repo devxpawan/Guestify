@@ -79,8 +79,8 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
                         <td><i class="bi bi-geo-alt text-muted me-1"></i><?= htmlspecialchars($c['address']) ?></td>
                         <td>
                             <div class="action-btns">
-                                <a href="edit.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                                <a href="delete.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="bi bi-trash"></i></a>
+                                <a href="edit.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <a href="delete.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
                             </div>
                         </td>
                     </tr>

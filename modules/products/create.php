@@ -5,6 +5,8 @@ require_once '../../config/database.php';
 $error = '';
 $success = '';
 
+$categories_query = mysqli_query($conn, "SELECT * FROM product_categories ORDER BY category_name");
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_name = mysqli_real_escape_string($conn, $_POST['product_name']);
     $category = mysqli_real_escape_string($conn, $_POST['category']);
@@ -36,7 +38,12 @@ include '../../includes/sidebar.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Category</label>
-                    <input type="text" name="category" class="form-control" required>
+                    <select name="category" class="form-select" required>
+                        <option value="">Select Category</option>
+                        <?php while ($cat = mysqli_fetch_assoc($categories_query)): ?>
+                        <option value="<?= htmlspecialchars($cat['category_name']) ?>"><?= htmlspecialchars($cat['category_name']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Quantity</label>

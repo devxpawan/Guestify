@@ -86,7 +86,7 @@ include '../../includes/sidebar.php';
                                 <td><?= htmlspecialchars($order['full_name']) ?></td>
                                 <td><?= htmlspecialchars($order['product_name']) ?></td>
                                 <td><span class="badge badge-info"><?= $order['quantity'] ?></span></td>
-                                <td><strong>$<?= number_format($order['quantity'] * $order['price'], 2) ?></strong></td>
+                                <td><strong><?= htmlspecialchars($global_currency) . number_format($order['quantity'] * $order['price'], 2) ?></strong></td>
                                 <td>
                                     <span class="badge badge-<?= $order['status'] == 'Pending' ? 'warning' : ($order['status'] == 'Served' ? 'success' : 'secondary') ?>">
                                         <?= $order['status'] ?>

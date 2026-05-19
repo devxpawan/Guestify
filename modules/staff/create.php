@@ -10,6 +10,8 @@ if (!has_role(['Admin', 'Manager'])) {
 $error = '';
 $success = '';
 
+$positions_query = mysqli_query($conn, "SELECT * FROM staff_positions ORDER BY position_name");
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = mysqli_real_escape_string($conn, $_POST['name']);
     $position = mysqli_real_escape_string($conn, $_POST['position']);
@@ -42,7 +44,12 @@ include '../../includes/sidebar.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Position</label>
-                    <input type="text" name="position" class="form-control" required>
+                    <select name="position" class="form-select" required>
+                        <option value="">Select Position</option>
+                        <?php while ($pos = mysqli_fetch_assoc($positions_query)): ?>
+                        <option value="<?= htmlspecialchars($pos['position_name']) ?>"><?= htmlspecialchars($pos['position_name']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Phone</label>

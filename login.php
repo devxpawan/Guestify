@@ -12,6 +12,7 @@ $branding = mysqli_fetch_assoc($branding_query);
 
 $global_company_name = $branding['company_name'] ?? 'VillaRS';
 $global_logo = $branding['logo_path'] ?? '';
+$global_favicon = $branding['favicon_path'] ?? '';
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -44,6 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login - <?= htmlspecialchars($global_company_name) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
+    <?php if ($global_favicon): ?>
+    <link rel="icon" href="uploads/<?= htmlspecialchars($global_favicon) ?>">
+    <?php endif; ?>
     <style>
         * {
             margin: 0;

@@ -32,7 +32,7 @@ $product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SU
                 <hr>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted" style="font-size: 0.85rem;">Revenue Today</span>
-                    <strong class="text-primary" style="font-size: 1.25rem;">$<?= number_format($daily['revenue'], 2) ?></strong>
+                    <strong class="text-primary" style="font-size: 1.25rem;"><?= htmlspecialchars($global_currency) ?><?= number_format($daily['revenue'], 2) ?></strong>
                 </div>
             </div>
         </div>
@@ -72,7 +72,7 @@ $product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SU
                                 <tr>
                                     <td><strong><?= $m['month'] ?></strong></td>
                                     <td><?= $m['total'] ?></td>
-                                    <td><strong class="text-success">$<?= number_format($m['revenue'], 2) ?></strong></td>
+                                    <td><strong class="text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($m['revenue'], 2) ?></strong></td>
                                 </tr>
                                 <?php endwhile; ?>
                             </tbody>
@@ -100,7 +100,7 @@ $product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SU
                                         </div>
                                     </td>
                                     <td><span class="badge badge-secondary"><?= $tc['bookings'] ?></span></td>
-                                    <td><strong class="text-primary">$<?= number_format($tc['spent'], 2) ?></strong></td>
+                                    <td><strong class="text-primary"><?= htmlspecialchars($global_currency) ?><?= number_format($tc['spent'], 2) ?></strong></td>
                                 </tr>
                                 <?php endwhile; ?>
                             </tbody>
@@ -124,7 +124,7 @@ $product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SU
                                 <tr>
                                     <td><span class="badge badge-purple"><?= htmlspecialchars($sr['position']) ?></span></td>
                                     <td><strong><?= $sr['total'] ?></strong></td>
-                                    <td><strong>$<?= number_format($sr['total_salary'], 2) ?></strong></td>
+                                    <td><strong><?= htmlspecialchars($global_currency) . number_format($sr['total_salary'], 2) ?></strong></td>
                                 </tr>
                                 <?php endwhile; ?>
                             </tbody>
@@ -152,7 +152,7 @@ $product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SU
                                         </div>
                                     </td>
                                     <td><span class="badge badge-info"><?= $ps['qty'] ?></span></td>
-                                    <td><strong class="text-success">$<?= number_format($ps['total'], 2) ?></strong></td>
+                                    <td><strong class="text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($ps['total'], 2) ?></strong></td>
                                 </tr>
                                 <?php endwhile; ?>
                             </tbody>

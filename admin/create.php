@@ -37,16 +37,16 @@ include '../includes/sidebar.php';
                 <h2><i class="bi bi-person-plus"></i> Create New User</h2>
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Add a new system user with role assignment</p>
             </div>
-            <a href="users.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Users</a>
+            <a href="users.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Users</a>
         </div>
     </div>
 
     <?php if ($error): ?>
-    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
+    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
     <div class="card shadow-sm">
-        <div class="card-header"><h5><i class="bi bi-person-plus"></i> User Details</h5></div>
+        <div class="card-header"><h5><i class="fas fa-user-plus"></i> User Details</h5></div>
         <div class="card-body">
             <form method="POST" class="row g-3">
                 <div class="col-md-4">
@@ -67,8 +67,8 @@ include '../includes/sidebar.php';
                     </select>
                 </div>
                 <div class="col-12">
-                    <button type="submit" name="add_user" class="btn btn-primary"><i class="bi bi-check-lg"></i> Create User</button>
-                    <a href="users.php" class="btn btn-outline-secondary ms-2"><i class="bi bi-x-lg"></i> Cancel</a>
+                    <button type="submit" name="add_user" class="btn btn-primary"><i class="fas fa-check"></i> Create User</button>
+                    <a href="users.php" class="btn btn-outline-secondary ms-2"><i class="fas fa-times"></i> Cancel</a>
                 </div>
             </form>
         </div>

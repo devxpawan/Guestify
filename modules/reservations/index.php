@@ -127,19 +127,19 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                         <td>
                             <div class="action-btns">
                                 <?php if ($r['status'] == 'Pending'): ?>
-                                <a href="edit.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                <a href="edit.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-pencil-alt"></i></a>
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Pending'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Confirmed" class="btn btn-sm btn-success" title="Confirm"><i class="bi bi-check-circle"></i></a>
+                                <a href="status.php?id=<?= $r['id'] ?>&s=Confirmed" class="btn btn-sm btn-success" title="Confirm"><i class="fas fa-check-circle"></i></a>
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Confirmed'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Checked-In" class="btn btn-sm btn-info" title="Check-In"><i class="bi bi-box-arrow-in-right"></i></a>
+                                <a href="status.php?id=<?= $r['id'] ?>&s=Checked-In" class="btn btn-sm btn-info" title="Check-In"><i class="fas fa-sign-in-alt"></i></a>
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Checked-In'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Checked-Out" class="btn btn-sm btn-secondary" title="Check-Out"><i class="bi bi-box-arrow-right"></i></a>
+                                <a href="status.php?id=<?= $r['id'] ?>&s=Checked-Out" class="btn btn-sm btn-secondary" title="Check-Out"><i class="fas fa-sign-out-alt"></i></a>
                                 <?php endif; ?>
                                 <?php if ($r['status'] != 'Cancelled' && $r['status'] != 'Checked-Out'): ?>
-                                <a href="status.php?id=<?= $r['id'] ?>&s=Cancelled" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this reservation? This will free up the room.')" title="Cancel"><i class="bi bi-x-circle"></i></a>
+                                <a href="status.php?id=<?= $r['id'] ?>&s=Cancelled" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this reservation? This will free up the room.')" title="Cancel"><i class="fas fa-times-circle"></i></a>
                                 <?php endif; ?>
                             </div>
                         </td>

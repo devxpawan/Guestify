@@ -4,6 +4,7 @@ require_once '../../config/database.php';
 
 $id = (int)$_GET['id'];
 $product = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$id"));
+$categories_query = mysqli_query($conn, "SELECT * FROM product_categories ORDER BY category_name");
 if (!$product) {
     header('Location: index.php');
     exit();
@@ -44,7 +45,12 @@ include '../../includes/sidebar.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Category</label>
-                    <input type="text" name="category" class="form-control" value="<?= htmlspecialchars($product['category']) ?>" required>
+                    <select name="category" class="form-select" required>
+                        <option value="">Select Category</option>
+                        <?php while ($cat = mysqli_fetch_assoc($categories_query)): ?>
+                        <option value="<?= htmlspecialchars($cat['category_name']) ?>" <?= $product['category'] == $cat['category_name'] ? 'selected' : '' ?>><?= htmlspecialchars($cat['category_name']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Quantity</label>
