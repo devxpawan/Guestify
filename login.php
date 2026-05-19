@@ -47,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/css/style.css">
     <?php if ($global_favicon): ?>
     <link rel="icon" href="uploads/<?= htmlspecialchars($global_favicon) ?>">
+    <?php else: ?>
+    <link rel="icon" href="assets/images/favicon.png">
     <?php endif; ?>
     <style>
         * {
@@ -320,9 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (!empty($global_logo)): ?>
                     <img src="uploads/<?= htmlspecialchars($global_logo) ?>" alt="Logo" style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px; filter: brightness(1.1);">
                 <?php else: ?>
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
+                    <img src="assets/images/logo.png" alt="Logo" style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px; filter: brightness(1.1);">
                 <?php endif; ?>
             </div>
             <h3><?= htmlspecialchars($global_company_name) ?></h3>

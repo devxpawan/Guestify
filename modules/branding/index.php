@@ -108,7 +108,10 @@ include '../../includes/sidebar.php';
                                 <img src="../../uploads/<?= htmlspecialchars($branding['logo_path']) ?>" alt="Logo" class="img-thumbnail" style="max-height: 80px;">
                             </div>
                         <?php else: ?>
-                            <div class="mb-2" style="height: 85px;"></div>
+                            <div class="mb-2 d-flex align-items-center" style="height: 85px;">
+                                <img src="../../assets/images/logo.png" alt="Fallback Logo" class="img-thumbnail" style="max-height: 80px; opacity: 0.6;">
+                                <small class="text-muted ms-2">Default Logo</small>
+                            </div>
                         <?php endif; ?>
                         <input type="file" name="logo" class="form-control" accept="image/*">
                         <small class="text-muted">Recommended: Transparent PNG, max height 50px.</small>
@@ -120,7 +123,10 @@ include '../../includes/sidebar.php';
                                 <img src="../../uploads/<?= htmlspecialchars($branding['favicon_path']) ?>" alt="Favicon" class="img-thumbnail" style="max-height: 40px;">
                             </div>
                         <?php else: ?>
-                            <div class="mb-2" style="height: 85px;"></div>
+                            <div class="mb-2 d-flex align-items-center" style="height: 85px;">
+                                <img src="../../assets/images/favicon.png" alt="Fallback Favicon" class="img-thumbnail" style="max-height: 40px; opacity: 0.6;">
+                                <small class="text-muted ms-2">Default Favicon</small>
+                            </div>
                         <?php endif; ?>
                         <input type="file" name="favicon" class="form-control" accept="image/x-icon,image/png,image/jpeg">
                         <small class="text-muted">Recommended: Square format (e.g., 32x32) PNG or ICO.</small>

@@ -22,6 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = mysqli_real_escape_string($conn, $_POST['username']);
         $role_id = (int)($_POST['role_id'] ?? 0);
         
+        $check = mysqli_query($conn, "SELECT id FROM users WHERE username='$username' AND id != $uid");
+        if (mysqli_num_rows($check) > 0) {
+            $_SESSION['error'] = 'Username is already taken.';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
+        }
+        
         if ($uid == $_SESSION['user_id']) {
             $sql = "UPDATE users SET username='$username'";
             $_SESSION['username'] = $username;
@@ -132,9 +139,6 @@ include '../includes/sidebar.php';
                         <td><strong>#<?= $u['id'] ?></strong></td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                    <i class="bi bi-person"></i>
-                                </div>
                                 <?= htmlspecialchars($u['username']) ?>
                             </div>
                         </td>
@@ -149,11 +153,11 @@ include '../includes/sidebar.php';
                             <div class="action-btns">
                                 <form method="POST" style="display:inline">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $u['status'] ? 'outline-warning' : 'outline-success' ?>">
-                                        <i class="fas fa-<?= $u['status'] ? 'pause' : 'play' ?>"></i> <?= $u['status'] ? 'Deactivate' : 'Activate' ?>
+                                    <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $u['status'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $u['status'] ? 'Deactivate' : 'Activate' ?>">
+                                        <i class="fas fa-<?= $u['status'] ? 'ban' : 'check' ?>"></i>
                                     </button>
                                 </form>
-                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)"><i class="fas fa-pencil-alt"></i> Edit</button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)" title="Edit"><i class="fas fa-pencil-alt"></i></button>
                             </div>
                         </td>
                     </tr>

@@ -5,6 +5,8 @@
             <div class="sidebar-brand-logo">
                 <?php if (!empty($global_logo)): ?>
                     <img src="<?= $base_url ?>uploads/<?= htmlspecialchars($global_logo) ?>" alt="Logo">
+                <?php else: ?>
+                    <img src="<?= $base_url ?>assets/images/logo.png" alt="Logo" style="max-height: 40px;">
                 <?php endif; ?>
                 <span class="sidebar-brand-name "><?= htmlspecialchars($global_company_name) ?></span>
             </div>
