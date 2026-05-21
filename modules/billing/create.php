@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
-require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Cashier'])) {
     header('Location: index.php');
@@ -61,25 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   VALUES ($reservation_id, $room_charges, $product_charges, $discount, $grand_total, 'Unpaid')";
         if (mysqli_query($conn, $query)) {
             $invoice_id = mysqli_insert_id($conn);
-            log_activity('create', 'invoices', $invoice_id, null, [
-                'reservation_id' => $reservation_id,
-                'room_charges' => $room_charges,
-                'product_charges' => $product_charges,
-                'discount' => $discount,
-                'grand_total' => $grand_total,
-                'payment_status' => 'Unpaid'
-            ]);
 
             mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Room', 'Room Charges ({$res['check_in']} to {$res['check_out']})', $days, $price, $room_charges)");
             $invoice_item_id = mysqli_insert_id($conn);
-            log_activity('create', 'invoice_items', $invoice_item_id, null, [
-                'invoice_id' => $invoice_id,
-                'item_type' => 'Room',
-                'item_name' => "Room Charges ({$res['check_in']} to {$res['check_out']})",
-                'quantity' => $days,
-                'price' => $price,
-                'total' => $room_charges
-            ]);
 
             if (isset($_POST['products'])) {
                 foreach ($_POST['products'] as $pid => $qty) {
@@ -88,20 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $total = $qty * $prod['price'];
                         mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Product', '{$prod['product_name']}', $qty, {$prod['price']}, $total)");
                         $invoice_item_id = mysqli_insert_id($conn);
-                        log_activity('create', 'invoice_items', $invoice_item_id, null, [
-                            'invoice_id' => $invoice_id,
-                            'item_type' => 'Product',
-                            'item_name' => $prod['product_name'],
-                            'quantity' => $qty,
-                            'price' => $prod['price'],
-                            'total' => $total
-                        ]);
                         
-                        // Log product quantity update
                         $old_product_quantity = $prod['quantity'];
                         $new_product_quantity = $prod['quantity'] - $qty;
                         mysqli_query($conn, "UPDATE products SET quantity = quantity - $qty WHERE id=$pid");
-                        log_activity('update', 'products', $pid, ['quantity' => $old_product_quantity], ['quantity' => $new_product_quantity]);
                     }
                 }
             }
@@ -112,14 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $total = $so['quantity'] * $so['price'];
                 mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total)");
                 $invoice_item_id = mysqli_insert_id($conn);
-                log_activity('create', 'invoice_items', $invoice_item_id, null, [
-                    'invoice_id' => $invoice_id,
-                    'item_type' => 'Product',
-                    'item_name' => "RS: {$so['product_name']}",
-                    'quantity' => $so['quantity'],
-                    'price' => $so['price'],
-                    'total' => $total
-                ]);
             }
 
             $_SESSION['success'] = 'Invoice created successfully!';

@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
-require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Manager'])) {
     header('Location: ../../dashboard.php');
@@ -23,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 mysqli_query($conn, "INSERT INTO staff_positions (position_name) VALUES ('$name')");
                 $position_id = mysqli_insert_id($conn);
-                log_activity('create', 'staff_positions', $position_id, null, ['position_name' => $name]);
                 $_SESSION['success'] = 'Position added successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
@@ -35,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($name)) {
             $old_position = mysqli_fetch_assoc(mysqli_query($conn, "SELECT position_name FROM staff_positions WHERE id=$id"));
             mysqli_query($conn, "UPDATE staff_positions SET position_name='$name' WHERE id=$id");
-            log_activity('update', 'staff_positions', $id, ['position_name' => $old_position['position_name']], ['position_name' => $name]);
             $_SESSION['success'] = 'Position updated!';
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
@@ -44,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)$_POST['id'];
         $deleted_position = mysqli_fetch_assoc(mysqli_query($conn, "SELECT position_name FROM staff_positions WHERE id=$id"));
         mysqli_query($conn, "DELETE FROM staff_positions WHERE id=$id");
-        log_activity('delete', 'staff_positions', $id, ['position_name' => $deleted_position['position_name']], null);
         $_SESSION['success'] = 'Position deleted!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();

@@ -143,10 +143,6 @@
                     <i class="bi bi-shield-lock"></i>
                     <span>Users & Roles</span>
                 </a>
-                <a href="<?= $base_url ?>admin/audit_logs.php" class="sidebar-link <?= is_active_link('/admin/audit_logs.php') ? 'active' : '' ?>" data-page="audit_logs">
-                    <i class="bi bi-journal-text"></i>
-                    <span>Audit Logs</span>
-                </a>
                 <a href="<?= $base_url ?>modules/branding/index.php" class="sidebar-link <?= is_active_link('/modules/branding/index.php') ? 'active' : '' ?>" data-page="branding">
                     <i class="bi bi-palette"></i>
                     <span>Branding</span>

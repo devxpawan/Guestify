@@ -2,7 +2,6 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
-require_once '../../includes/audit_log.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     if (!has_role(['Admin'])) {
@@ -16,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
         $old_is_active = $item['is_active'];
         $new_is_active = $item['is_active'] ? 0 : 1;
         mysqli_query($conn, "UPDATE rooms SET is_active=$new_is_active WHERE id=$id");
-        log_activity('update', 'rooms', $id, ['is_active' => $old_is_active], ['is_active' => $new_is_active]);
         $_SESSION['success'] = 'Room status updated successfully!';
     }
     header("Location: " . $_SERVER['REQUEST_URI']);

@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
-require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -30,12 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $c_query = "INSERT INTO customers (full_name, nic_passport, phone, email) VALUES ('$full_name', '$nic_passport', '$phone', '$email')";
             if (mysqli_query($conn, $c_query)) {
                 $customer_id = mysqli_insert_id($conn);
-                log_activity('create', 'customers', $customer_id, null, [
-                    'full_name' => $full_name,
-                    'nic_passport' => $nic_passport,
-                    'phone' => $phone,
-                    'email' => $email
-                ]);
             } else {
                 $error = "Failed to create customer: " . mysqli_error($conn);
             }
@@ -74,16 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending')";
                 if (mysqli_query($conn, $query)) {
                     $reservation_id = mysqli_insert_id($conn);
-                    log_activity('create', 'reservations', $reservation_id, null, [
-                        'customer_id' => $customer_id,
-                        'room_id' => $room_id,
-                        'booking_type' => $booking_type,
-                        'check_in' => $check_in,
-                        'check_out' => $check_out,
-                        'adults' => $adults,
-                        'children' => $children,
-                        'status' => 'Pending'
-                    ]);
 
                     
                     // Calculate room charges based on booking type & duration
@@ -110,14 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     mysqli_query($conn, "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status)
                                          VALUES ($reservation_id, $room_charges, 0, 0, $grand_total, 'Unpaid')");
                     $invoice_id = mysqli_insert_id($conn);
-                    log_activity('create', 'invoices', $invoice_id, null, [
-                        'reservation_id' => $reservation_id,
-                        'room_charges' => $room_charges,
-                        'product_charges' => 0,
-                        'discount' => 0,
-                        'grand_total' => $grand_total,
-                        'payment_status' => 'Unpaid'
-                    ]);
 
                     
                     // Record payment if amount was provided
@@ -128,11 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method)
                                              VALUES ($invoice_id, $payment_amount, '$payment_method')");
                         $payment_id = mysqli_insert_id($conn);
-                        log_activity('create', 'payments', $payment_id, null, [
-                            'invoice_id' => $invoice_id,
-                            'amount' => $payment_amount,
-                            'payment_method' => $payment_method
-                        ]);
                         
                         $old_invoice_status = 'Unpaid'; // Initial status before potential update
                         $new_invoice_status = '';
@@ -146,7 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         if ($new_invoice_status !== $old_invoice_status) {
-                            log_activity('update', 'invoices', $invoice_id, ['payment_status' => $old_invoice_status], ['payment_status' => $new_invoice_status]);
                         }
                     }
                     

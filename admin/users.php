@@ -2,7 +2,6 @@
 require_once '../includes/session.php';
 require_once '../config/database.php';
 require_once '../includes/pagination.php';
-require_once '../includes/audit_log.php';
 
 if (!has_role(['Admin'])) {
     header('Location: ../dashboard.php');
@@ -19,7 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT status FROM users WHERE id=$uid"));
         $new_status = $user['status'] ? 0 : 1;
-        log_activity('update', 'users', ['status' => $user['status']], ['status' => $new_status]);
         mysqli_query($conn, "UPDATE users SET status=$new_status WHERE id=$uid");
         $_SESSION['success'] = 'User status updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);
@@ -52,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         mysqli_query($conn, $sql . " WHERE id=$uid");
-        log_activity('update', 'users', $uid, $old_user, ['username' => $username, 'role_id' => $role_id]);
         $_SESSION['success'] = 'User details updated successfully!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();

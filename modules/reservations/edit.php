@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
-require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -73,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'status' => $status
                 ];
 
-                log_activity('update', 'reservations', $id, $old_reservation_data, $new_reservation_data);
 
                 $_SESSION['success'] = 'Reservation updated successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);

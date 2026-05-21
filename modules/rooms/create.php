@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
-require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -53,17 +52,6 @@ $company_name = $branding['company_name'] ?? 'Villa';
                       VALUES ('$room_number', $room_type_id, $capacity, $price, $price_day, $price_night, $price_short, '$description', '$image_name')";
             if (mysqli_query($conn, $query)) {
                 $room_id = mysqli_insert_id($conn);
-                log_activity('create', 'rooms', $room_id, null, [
-                    'room_number' => $room_number,
-                    'room_type_id' => $room_type_id,
-                    'capacity' => $capacity,
-                    'price' => $price,
-                    'price_day' => $price_day,
-                    'price_night' => $price_night,
-                    'price_short' => $price_short,
-                    'description' => $description,
-                    'image' => $image_name
-                ]);
                 $_SESSION['success'] = 'Room added successfully!';
                 header("Location: index.php");
                 exit();

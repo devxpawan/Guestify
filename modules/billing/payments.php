@@ -1,7 +1,6 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
-require_once '../../includes/audit_log.php';
 
 $branding_query = mysqli_query($conn, "SELECT currency_symbol FROM settings LIMIT 1");
 $branding = mysqli_fetch_assoc($branding_query);
@@ -43,26 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method) VALUES ($id, $amount, '$method')");
         $payment_id = mysqli_insert_id($conn);
-        log_activity('create', 'payments', $payment_id, null, [
-            'invoice_id' => $id,
-            'amount' => $amount,
-            'payment_method' => $method
-        ]);
 
         $new_paid = $paid_total + $amount;
-        $old_invoice_status = $invoice['payment_status']; // Get current status from initial fetch
-        $new_invoice_status = '';
 
         if ($new_paid >= $invoice['grand_total']) {
             mysqli_query($conn, "UPDATE invoices SET payment_status='Paid' WHERE id=$id");
-            $new_invoice_status = 'Paid';
         } else {
             mysqli_query($conn, "UPDATE invoices SET payment_status='Partial' WHERE id=$id");
-            $new_invoice_status = 'Partial';
-        }
-
-        if ($new_invoice_status !== $old_invoice_status) {
-            log_activity('update', 'invoices', $id, ['payment_status' => $old_invoice_status], ['payment_status' => $new_invoice_status]);
         }
 
         $_SESSION['success'] = 'Payment recorded!';
