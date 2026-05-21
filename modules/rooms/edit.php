@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -67,10 +68,35 @@ $success = '';
                       price=$price, price_day=$price_day, price_night=$price_night, price_short=$price_short,
                       status='$status', description='$description' $image_query WHERE id=$id";
             if (mysqli_query($conn, $query)) {
+                $old_room_data = [
+                    'room_number' => $room['room_number'],
+                    'room_type_id' => $room['room_type_id'],
+                    'capacity' => $room['capacity'],
+                    'price' => $room['price'],
+                    'price_day' => $room['price_day'],
+                    'price_night' => $room['price_night'],
+                    'price_short' => $room['price_short'],
+                    'status' => $room['status'],
+                    'description' => $room['description'],
+                    'image' => $room['image']
+                ];
+                $new_room_data = [
+                    'room_number' => $room_number,
+                    'room_type_id' => $room_type_id,
+                    'capacity' => $capacity,
+                    'price' => $price,
+                    'price_day' => $price_day,
+                    'price_night' => $price_night,
+                    'price_short' => $price_short,
+                    'status' => $status,
+                    'description' => $description,
+                    'image' => empty($image_name) ? $room['image'] : $image_name
+                ];
+                log_activity('update', 'rooms', $id, $old_room_data, $new_room_data);
+
                 $_SESSION['success'] = 'Room updated successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
-                $room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id"));
             } else {
                 $error = 'Failed to update room: ' . mysqli_error($conn);
             }

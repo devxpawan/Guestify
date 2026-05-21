@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Manager'])) {
     header('Location: index.php');
@@ -28,10 +29,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', nic='$nic', email='$email', salary=$salary WHERE id=$id";
     if (mysqli_query($conn, $query)) {
+        $old_staff_data = [
+            'name' => $staff['name'],
+            'position' => $staff['position'],
+            'phone' => $staff['phone'],
+            'nic' => $staff['nic'],
+            'email' => $staff['email'],
+            'salary' => $staff['salary']
+        ];
+        $new_staff_data = [
+            'name' => $name,
+            'position' => $position,
+            'phone' => $phone,
+            'nic' => $nic,
+            'email' => $email,
+            'salary' => $salary
+        ];
+        log_activity('update', 'staff', $id, $old_staff_data, $new_staff_data);
+
         $_SESSION['success'] = 'Staff updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();
-        $staff = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM staff WHERE id=$id"));
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
     }

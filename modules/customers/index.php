@@ -2,13 +2,16 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
+require_once '../../includes/audit_log.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     $id = (int)$_POST['id'];
     $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM customers WHERE id=$id"));
     if ($item) {
-        $new_status = $item['is_active'] ? 0 : 1;
-        mysqli_query($conn, "UPDATE customers SET is_active=$new_status WHERE id=$id");
+        $old_is_active = $item['is_active'];
+        $new_is_active = $item['is_active'] ? 0 : 1;
+        mysqli_query($conn, "UPDATE customers SET is_active=$new_is_active WHERE id=$id");
+        log_activity('update', 'customers', $id, ['is_active' => $old_is_active], ['is_active' => $new_is_active]);
         $_SESSION['success'] = 'Customer status updated successfully!';
     }
     header("Location: " . $_SERVER['REQUEST_URI']);

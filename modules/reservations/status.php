@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     $_SESSION['error'] = 'Unauthorized access.';
@@ -19,15 +20,28 @@ $new_status = mysqli_real_escape_string($conn, $_POST['status']);
 
 $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
 if ($res) {
+    $old_status = $res['status'];
     // Update reservation status
     mysqli_query($conn, "UPDATE reservations SET status='$new_status' WHERE id=$id");
+    
+    log_activity('update', 'reservations', $id, ['status' => $old_status], ['status' => $new_status]);
 
     // Update room status accordingly
     if ($new_status == 'Checked-In') {
-        mysqli_query($conn, "UPDATE rooms SET status='Occupied' WHERE id=" . $res['room_id']);
+        $room_id = $res['room_id'];
+        $old_room_status_res = mysqli_query($conn, "SELECT status FROM rooms WHERE id=" . $room_id);
+        $old_room_status = mysqli_fetch_assoc($old_room_status_res)['status'];
+
+        mysqli_query($conn, "UPDATE rooms SET status='Occupied' WHERE id=" . $room_id);
+        log_activity('update', 'rooms', $room_id, ['status' => $old_room_status], ['status' => 'Occupied']);
         $_SESSION['success'] = "Guest checked in successfully!";
     } elseif (in_array($new_status, ['Checked-Out', 'Cancelled'])) {
-        mysqli_query($conn, "UPDATE rooms SET status='Available' WHERE id=" . $res['room_id']);
+        $room_id = $res['room_id'];
+        $old_room_status_res = mysqli_query($conn, "SELECT status FROM rooms WHERE id=" . $room_id);
+        $old_room_status = mysqli_fetch_assoc($old_room_status_res)['status'];
+
+        mysqli_query($conn, "UPDATE rooms SET status='Available' WHERE id=" . $room_id);
+        log_activity('update', 'rooms', $room_id, ['status' => $old_room_status], ['status' => 'Available']);
         
         if ($new_status == 'Checked-Out') {
             // Check if invoice already exists for this reservation
@@ -60,10 +74,27 @@ if ($res) {
                     
                     if (mysqli_query($conn, $query)) {
                         $invoice_id = mysqli_insert_id($conn);
+                        log_activity('create', 'invoices', $invoice_id, null, [
+                            'reservation_id' => $id,
+                            'room_charges' => $room_charges,
+                            'product_charges' => $product_charges,
+                            'discount' => 0,
+                            'grand_total' => $grand_total,
+                            'payment_status' => 'Unpaid'
+                        ]);
                         
                         // Insert room charge item
                         mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) 
                                              VALUES ($invoice_id, 'Room', 'Room Charges ({$res_billing['check_in']} to {$res_billing['check_out']})', $days, $price, $room_charges)");
+                        $invoice_item_id = mysqli_insert_id($conn);
+                        log_activity('create', 'invoice_items', $invoice_item_id, null, [
+                            'invoice_id' => $invoice_id,
+                            'item_type' => 'Room',
+                            'item_name' => "Room Charges ({$res_billing['check_in']} to {$res_billing['check_out']})",
+                            'quantity' => $days,
+                            'price' => $price,
+                            'total' => $room_charges
+                        ]);
 
                         // Transfer Service Orders to Invoice Items
                         $service_orders = mysqli_query($conn, "SELECT so.*, p.product_name FROM service_orders so JOIN products p ON so.product_id = p.id WHERE so.reservation_id = $id AND so.status != 'Cancelled'");
@@ -71,6 +102,15 @@ if ($res) {
                             $total = $so['quantity'] * $so['price'];
                             mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) 
                                                  VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total)");
+                            $invoice_item_id = mysqli_insert_id($conn);
+                            log_activity('create', 'invoice_items', $invoice_item_id, null, [
+                                'invoice_id' => $invoice_id,
+                                'item_type' => 'Product',
+                                'item_name' => "RS: {$so['product_name']}",
+                                'quantity' => $so['quantity'],
+                                'price' => $so['price'],
+                                'total' => $total
+                            ]);
                         }
                         $_SESSION['success'] = "Guest checked out successfully! Invoice #{$invoice_id} has been auto-generated.";
                     } else {

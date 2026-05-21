@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit_log.php';
 
 $id = (int)$_GET['id'];
 $customer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM customers WHERE id=$id"));
@@ -21,10 +22,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "UPDATE customers SET full_name='$full_name', nic_passport='$nic_passport', phone='$phone', email='$email', address='$address' WHERE id=$id";
     if (mysqli_query($conn, $query)) {
+        $old_customer_data = [
+            'full_name' => $customer['full_name'],
+            'nic_passport' => $customer['nic_passport'],
+            'phone' => $customer['phone'],
+            'email' => $customer['email'],
+            'address' => $customer['address']
+        ];
+        $new_customer_data = [
+            'full_name' => $full_name,
+            'nic_passport' => $nic_passport,
+            'phone' => $phone,
+            'email' => $email,
+            'address' => $address
+        ];
+        log_activity('update', 'customers', $id, $old_customer_data, $new_customer_data);
+
         $_SESSION['success'] = 'Customer updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();
-        $customer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM customers WHERE id=$id"));
     } else {
         $error = 'Failed: ' . mysqli_error($conn);
     }

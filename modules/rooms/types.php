@@ -1,6 +1,7 @@
 <?php
 require_once "../../includes/session.php";
 require_once "../../config/database.php";
+require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin'])) {
     header('Location: index.php');
@@ -16,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($type_name)) {
             $query = "INSERT INTO room_types (type_name) VALUES ('$type_name')";
             if (mysqli_query($conn, $query)) {
+                $type_id = mysqli_insert_id($conn);
+                log_activity('create', 'room_types', $type_id, null, ['type_name' => $type_name]);
                 $_SESSION['success'] = "Room type added successfully!";
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
@@ -29,7 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (mysqli_num_rows($check) > 0) {
             $error = "Cannot delete: This type is being used by rooms.";
         } else {
+            $deleted_type = mysqli_fetch_assoc(mysqli_query($conn, "SELECT type_name FROM room_types WHERE id=$id"));
             mysqli_query($conn, "DELETE FROM room_types WHERE id=$id");
+            log_activity('delete', 'room_types', $id, ['type_name' => $deleted_type['type_name']], null);
             $_SESSION['success'] = "Room type deleted.";
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();

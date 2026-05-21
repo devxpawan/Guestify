@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit_log.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -49,10 +50,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $query = "UPDATE reservations SET customer_id=$customer_id, room_id=$room_id, booking_type='$booking_type', check_in='$check_in', 
                       check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id";
             if (mysqli_query($conn, $query)) {
+                
+                // Prepare old and new values for logging
+                $old_reservation_data = [
+                    'customer_id' => $res['customer_id'],
+                    'room_id' => $res['room_id'],
+                    'booking_type' => $res['booking_type'],
+                    'check_in' => $res['check_in'],
+                    'check_out' => $res['check_out'],
+                    'adults' => $res['adults'],
+                    'children' => $res['children'],
+                    'status' => $res['status']
+                ];
+                $new_reservation_data = [
+                    'customer_id' => $customer_id,
+                    'room_id' => $room_id,
+                    'booking_type' => $booking_type,
+                    'check_in' => $check_in,
+                    'check_out' => $check_out,
+                    'adults' => $adults,
+                    'children' => $children,
+                    'status' => $status
+                ];
+
+                log_activity('update', 'reservations', $id, $old_reservation_data, $new_reservation_data);
+
                 $_SESSION['success'] = 'Reservation updated successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
-                $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
             } else {
                 $error = 'Failed: ' . mysqli_error($conn);
             }
