@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $company_name = mysqli_real_escape_string($conn, $_POST['company_name']);
     $company_email = mysqli_real_escape_string($conn, $_POST['company_email']);
     $currency_symbol = mysqli_real_escape_string($conn, $_POST['currency_symbol']);
+    $currency_symbol = preg_replace('/\s+/', '', $currency_symbol);
 
     $update_query = "UPDATE settings SET company_name = '$company_name', company_email = '$company_email', currency_symbol = '$currency_symbol'";
     
@@ -93,7 +94,7 @@ include '../../includes/sidebar.php';
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Currency Symbol</label>
-                        <input type="text" name="currency_symbol" class="form-control" value="<?= htmlspecialchars($branding['currency_symbol'] ?? '$') ?>" required>
+                        <input type="text" name="currency_symbol" class="form-control" value="<?= htmlspecialchars($branding['currency_symbol'] ?? '$') ?>" required oninput="this.value = this.value.replace(/\s/g, '')">
                         <small class="text-muted">Used for dashboard revenues, room prices, and billing.</small>
                     </div>
                 </div>

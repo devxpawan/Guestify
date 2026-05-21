@@ -133,7 +133,12 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                                 <div class="bg-light border text-center d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 8px; font-size: 10px; color: #94a3b8;">No Img</div>
                             <?php endif; ?>
                         </td>
-                        <td><strong><?= htmlspecialchars($row['room_number']) ?></strong></td>
+                        <td>
+                            <strong><?= htmlspecialchars($row['room_number']) ?></strong>
+                            <?php if ($row['status'] == 'Available'): ?>
+                                <div class="small text-muted">Available</div>
+                            <?php endif; ?>
+                        </td>
                         <td><?= $row['type_name'] ?></td>
                         <td><span class="badge badge-secondary"><?= $row['capacity'] ?> <i class="bi bi-person"></i></span></td>
                         <td>
@@ -142,9 +147,6 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
                             <div class="small text-muted">Short: <strong class="text-dark"><?= htmlspecialchars($global_currency) ?><?= number_format($row['price_short'], 2) ?></strong></div>
                         </td>
                         <td>
-                            <span class="badge badge-<?= $row['status'] == 'Available' ? 'success' : ($row['status'] == 'Occupied' ? 'danger' : 'warning') ?> mb-1 d-block">
-                                <i class="bi bi-<?= $row['status'] == 'Available' ? 'check-circle' : ($row['status'] == 'Occupied' ? 'x-circle' : 'clock') ?>"></i> <?= $row['status'] ?>
-                            </span>
                             <span class="badge badge-<?= $row['is_active'] ? 'success' : 'danger' ?> d-block">
                                 <i class="bi bi-<?= $row['is_active'] ? 'check-circle' : 'x-circle' ?>"></i> <?= $row['is_active'] ? 'Active' : 'Inactive' ?>
                             </span>
