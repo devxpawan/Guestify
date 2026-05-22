@@ -9,38 +9,41 @@ if (!has_role(['Admin', 'Receptionist'])) {
 }
 
 $villa_id = active_villa_id();
-$error = '';
-$success = '';
-
-$customers = mysqli_query($conn, "SELECT * FROM customers WHERE is_active = 1 AND villa_id = $villa_id ORDER BY full_name");
 $room_types = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $is_new_customer = isset($_POST['is_new_customer']);
-    $customer_id = 0;
+    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
+    $nic_passport = mysqli_real_escape_string($conn, $_POST['nic_passport']);
+    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
 
-    if ($is_new_customer) {
-        $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
-        $nic_passport = mysqli_real_escape_string($conn, $_POST['nic_passport']);
-        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
-        $email = mysqli_real_escape_string($conn, $_POST['email']);
-        
-        if (empty($full_name) || empty($nic_passport) || empty($phone)) {
-            $error = 'Please fill all customer details!';
-        } else {
-            $c_query = "INSERT INTO customers (full_name, nic_passport, phone, email) VALUES ('$full_name', '$nic_passport', '$phone', '$email')";
-            if (mysqli_query($conn, $c_query)) {
-                $customer_id = mysqli_insert_id($conn);
-            } else {
-                $error = "Failed to create customer: " . mysqli_error($conn);
-            }
-        }
-    } else {
-        $customer_id = (int)$_POST['customer_id'];
-        if ($customer_id <= 0) $error = 'Please select a customer!';
+    if (!empty($email) && !str_contains($email, '@')) {
+        $_SESSION['error'] = 'Email must contain @.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     }
 
-    if (!$error) {
+    if (!empty($phone) && (!ctype_digit($phone) || strlen($phone) !== 10)) {
+        $_SESSION['error'] = 'Phone must be exactly 10 digits.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+    
+    if (empty($full_name) || empty($nic_passport) || empty($phone)) {
+        $_SESSION['error'] = 'Please fill all customer details!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
+    $c_query = "INSERT INTO customers (full_name, nic_passport, phone, email, villa_id) VALUES ('$full_name', '$nic_passport', '$phone', '$email', $villa_id)";
+    if (mysqli_query($conn, $c_query)) {
+        $customer_id = mysqli_insert_id($conn);
+    } else {
+        $_SESSION['error'] = "Failed to create customer: " . mysqli_error($conn);
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
         $room_id = (int)$_POST['room_id'];
         $booking_type = mysqli_real_escape_string($conn, $_POST['booking_type'] ?? 'Night Time');
         $check_in = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_in']));
@@ -49,9 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $children = (int)$_POST['children'];
 
         if (empty($room_id)) {
-            $error = 'Please select an available room!';
+            $_SESSION['error'] = 'Please select an available room!';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } elseif (strtotime($check_out) <= strtotime($check_in)) {
-            $error = 'Check-out must be after check-in!';
+            $_SESSION['error'] = 'Check-out must be after check-in!';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } else {
             // Precise datetime overlap check including Pending/Confirmed/Checked-In reservations
             $overlap_query = "SELECT id FROM reservations 
@@ -64,7 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $overlap = mysqli_query($conn, $overlap_query);
             
             if (mysqli_num_rows($overlap) > 0) {
-                $error = 'Room is not available for the selected time slot!';
+                $_SESSION['error'] = 'Room is not available for the selected time slot!';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             } else {
                 $query = "INSERT INTO reservations (customer_id, room_id, booking_type, check_in, check_out, adults, children, status, villa_id) 
                           VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending', $villa_id)";
@@ -95,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $grand_total = $room_charges; // No tax applied
                     
                     // Create invoice
-                    mysqli_query($conn, "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status)
-                                         VALUES ($reservation_id, $room_charges, 0, 0, $grand_total, 'Unpaid')");
+                    mysqli_query($conn, "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status, villa_id)
+                                         VALUES ($reservation_id, $room_charges, 0, 0, $grand_total, 'Unpaid', $villa_id)");
                     $invoice_id = mysqli_insert_id($conn);
 
                     
@@ -105,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $payment_method = mysqli_real_escape_string($conn, $_POST['payment_method'] ?? 'Cash');
                     
                     if ($payment_amount > 0) {
-                        mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method)
-                                             VALUES ($invoice_id, $payment_amount, '$payment_method')");
+                        mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method, villa_id)
+                                             VALUES ($invoice_id, $payment_amount, '$payment_method', $villa_id)");
                         $payment_id = mysqli_insert_id($conn);
                         
                         $old_invoice_status = 'Unpaid'; // Initial status before potential update
@@ -128,11 +137,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header("Location: index.php");
                     exit();
                 } else {
-                    $error = 'Failed: ' . mysqli_error($conn);
+                    $_SESSION['error'] = 'Failed: ' . mysqli_error($conn);
+                    header("Location: " . $_SERVER['REQUEST_URI']);
+                    exit();
                 }
             }
         }
-    }
 }
 
 include '../../includes/header.php';
@@ -149,51 +159,29 @@ include '../../includes/sidebar.php';
         </div>
     </div>
 
-    <?php if ($error): ?>
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-
     <div class="card shadow-sm">
         <div class="card-header"><h5><i class="fas fa-calendar-check"></i> Reservation Details</h5></div>
         <div class="card-body">
             <form method="POST">
-                <!-- Customer Selection Section -->
+                <!-- Customer Information -->
                 <div class="mb-4">
                     <h6 class="text-muted mb-3"><i class="fas fa-user me-1"></i> Customer Information</h6>
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="isNewCustomer" name="is_new_customer" <?= isset($_POST['is_new_customer']) ? 'checked' : '' ?>>
-                        <label class="form-check-label fw-bold" for="isNewCustomer">New Customer?</label>
-                    </div>
-
-                    <div id="existingCustomerDiv" <?= isset($_POST['is_new_customer']) ? 'style="display:none;"' : '' ?>>
-                        <label class="form-label text-muted">Select Existing Customer</label>
-                        <select name="customer_id" id="customerId" class="form-select" <?= isset($_POST['is_new_customer']) ? '' : 'required' ?>>
-                            <option value="">Choose...</option>
-                            <?php while ($c = mysqli_fetch_assoc($customers)): ?>
-                            <option value="<?= $c['id'] ?>" <?= (isset($_POST['customer_id']) && $_POST['customer_id'] == $c['id']) ? 'selected' : '' ?>><?= htmlspecialchars($c['full_name']) ?> (<?= htmlspecialchars($c['nic_passport']) ?>)</option>
-                            <?php endwhile; ?>
-                        </select>
-                    </div>
-
-                    <div id="newCustomerDiv" <?= isset($_POST['is_new_customer']) ? 'style="display:block;"' : 'style="display:none;"' ?> class="p-3 bg-light rounded border">
-                        <h6 class="mb-3">Enter Customer Details</h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Full Name *</label>
-                                <input type="text" name="full_name" id="fullName" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['full_name'] ?? '') ?>" <?= isset($_POST['is_new_customer']) ? 'required' : '' ?>>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">NIC / Passport *</label>
-                                <input type="text" name="nic_passport" id="nicPassport" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['nic_passport'] ?? '') ?>" <?= isset($_POST['is_new_customer']) ? 'required' : '' ?>>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Phone *</label>
-                                <input type="text" name="phone" id="phone" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" <?= isset($_POST['is_new_customer']) ? 'required' : '' ?>>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Email</label>
-                                <input type="email" name="email" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Full Name *</label>
+                            <input type="text" name="full_name" id="fullName" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['full_name'] ?? '') ?>" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">NIC / Passport *</label>
+                            <input type="text" name="nic_passport" id="nicPassport" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['nic_passport'] ?? '') ?>" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Phone *</label>
+                            <input type="text" name="phone" id="phone" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" maxlength="10" oninput="this.value = this.value.replace(/\D/g, '')" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Email</label>
+                            <input type="email" name="email" class="form-control form-control-sm" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
                         </div>
                     </div>
                 </div>
@@ -278,19 +266,6 @@ include '../../includes/sidebar.php';
         </div>
     </div>
 </div>
-
-<script>
-document.getElementById('isNewCustomer').addEventListener('change', function() {
-    const isNew = this.checked;
-    document.getElementById('existingCustomerDiv').style.display = isNew ? 'none' : 'block';
-    document.getElementById('newCustomerDiv').style.display = isNew ? 'block' : 'none';
-    
-    document.getElementById('customerId').required = !isNew;
-    document.getElementById('fullName').required = isNew;
-    document.getElementById('nicPassport').required = isNew;
-    document.getElementById('phone').required = isNew;
-});
-</script>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>

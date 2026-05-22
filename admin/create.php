@@ -8,7 +8,6 @@ if (!has_role(['Admin'])) {
     exit();
 }
 
-$error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
     $username = mysqli_real_escape_string($conn, $_POST['username']);
@@ -17,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
 
     $check = mysqli_query($conn, "SELECT id FROM users WHERE username='$username'");
     if (mysqli_num_rows($check) > 0) {
-        $error = 'Username already exists!';
+        $_SESSION['error'] = 'Username already exists!';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     } else {
         mysqli_query($conn, "INSERT INTO users (username, password, role_id) VALUES ('$username', '$password', $role_id)");
         $new_user_id = mysqli_insert_id($conn);
@@ -57,9 +58,6 @@ include '../includes/sidebar.php';
         </div>
     </div>
 
-    <?php if ($error): ?>
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
 
     <div class="card shadow-sm">
         <div class="card-header"><h5><i class="fas fa-user-plus"></i> User Details</h5></div>

@@ -102,9 +102,6 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
                             <a href="modules/room_service/index.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-cart-plus"></i> Room Service</a>
                             <?php endif; ?>
 
-                            <?php if (has_role(['Admin', 'Cashier'])): ?>
-                            <a href="modules/billing/create.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-plus"></i> New Invoice</a>
-                            <?php endif; ?>
 
                             <?php if (has_role(['Admin', 'Manager', 'Receptionist'])): ?>
                             <a href="modules/reports/index.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-graph-up"></i> Reports</a>

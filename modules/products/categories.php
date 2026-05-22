@@ -7,18 +7,21 @@ if (!has_role(['Admin'])) {
     exit();
 }
 
-$error = '';
-$success = '';
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add'])) {
         $name = mysqli_real_escape_string($conn, trim($_POST['category_name']));
         if (empty($name)) {
-            $error = 'Category name is required.';
+            $_SESSION['error'] = 'Category name is required.';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } else {
             $check = mysqli_query($conn, "SELECT id FROM product_categories WHERE category_name='$name' AND " . active_villa_where_raw());
             if (mysqli_num_rows($check) > 0) {
-                $error = 'Category already exists.';
+                $_SESSION['error'] = 'Category already exists.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             } else {
                 $villa_id = (int)active_villa_id();
                 mysqli_query($conn, "INSERT INTO product_categories (category_name, villa_id) VALUES ('$name', $villa_id)");
@@ -60,13 +63,6 @@ include '../../includes/sidebar.php';
             <a href="index.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Products</a>
         </div>
     </div>
-
-    <?php if (isset($_SESSION['success'])): ?>
-    <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
 
     <div class="row g-4">
         <div class="col-md-5">

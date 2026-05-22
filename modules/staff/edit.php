@@ -27,6 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $salary = !empty($_POST['salary']) ? (float)$_POST['salary'] : 0;
 
+    if (!empty($email) && !str_contains($email, '@')) {
+        $_SESSION['error'] = 'Email must contain @.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
+    if (!empty($phone) && (!ctype_digit($phone) || strlen($phone) !== 10)) {
+        $_SESSION['error'] = 'Phone must be exactly 10 digits.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
     $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', nic='$nic', email='$email', salary=$salary WHERE id=$id AND " . active_villa_where_raw();
     if (mysqli_query($conn, $query)) {
         $old_staff_data = [
@@ -80,7 +92,7 @@ include '../../includes/sidebar.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Phone</label>
-                    <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($staff['phone']) ?>" required>
+                    <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($staff['phone']) ?>" maxlength="10" oninput="this.value = this.value.replace(/\D/g, '')" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">NIC Number</label>

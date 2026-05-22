@@ -7,8 +7,7 @@ if (!has_role(['Admin', 'Manager'])) {
     exit();
 }
 
-$error = '';
-$success = '';
+
 
 // Handle add/edit/delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -16,11 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = mysqli_real_escape_string($conn, trim($_POST['name']));
         $type = mysqli_real_escape_string($conn, $_POST['type']);
         if ($name === '') {
-            $error = 'Category name is required.';
+            $_SESSION['error'] = 'Category name is required.';
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
         } else {
             $check = mysqli_query($conn, "SELECT id FROM finance_categories WHERE name='$name' AND type='$type' AND " . active_villa_where_raw());
             if (mysqli_num_rows($check) > 0) {
-                $error = 'Category already exists.';
+                $_SESSION['error'] = 'Category already exists.';
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit();
             } else {
                 $villa_id = (int)active_villa_id();
                 mysqli_query($conn, "INSERT INTO finance_categories (name, type, villa_id) VALUES ('$name', '$type', $villa_id)");
@@ -44,7 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $check = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM transactions WHERE category_id=$id AND " . active_villa_where_raw());
         $used = mysqli_fetch_assoc($check)['cnt'];
         if ($used > 0) {
-            $error = 'Cannot delete: category has ' . $used . ' transaction(s) linked.';
+            $_SESSION['error'] = 'Cannot delete: category has ' . $used . ' transaction(s) linked.';
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
         } else {
             mysqli_query($conn, "DELETE FROM finance_categories WHERE id=$id AND " . active_villa_where_raw());
             $_SESSION['success'] = 'Category deleted successfully!';
@@ -75,9 +80,6 @@ include '../../includes/sidebar.php';
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Add Category</h5>
-                    <?php if ($error): ?>
-                    <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-                    <?php endif; ?>
                     <form method="POST">
                         <div class="mb-3">
                             <label class="form-label">Name</label>

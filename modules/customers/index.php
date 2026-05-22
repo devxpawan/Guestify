@@ -21,6 +21,8 @@ include '../../includes/sidebar.php';
 
 $search = '';
 $is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
+$date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : '';
+$date_to = isset($_GET['date_to']) ? mysqli_real_escape_string($conn, $_GET['date_to']) : '';
 
 $where_arr = [];
 if (isset($_GET['search']) && trim($_GET['search']) !== '') {
@@ -29,6 +31,12 @@ if (isset($_GET['search']) && trim($_GET['search']) !== '') {
 }
 if ($is_active_filter !== '') {
     $where_arr[] = "is_active = " . (int)$is_active_filter;
+}
+if ($date_from !== '') {
+    $where_arr[] = "DATE(created_at) >= '$date_from'";
+}
+if ($date_to !== '') {
+    $where_arr[] = "DATE(created_at) <= '$date_to'";
 }
 $where_arr[] = active_villa_where();
 $where = count($where_arr) > 0 ? "WHERE " . implode(" AND ", $where_arr) : "";
@@ -58,23 +66,30 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-7">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, NIC, or phone..." value="<?= htmlspecialchars($search) ?>">
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($date_from) ?>">
                 </div>
                 <div class="col-md-2">
-                    <select name="is_active" class="form-select">
+                    <label class="form-label small text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($date_to) ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Search</label>
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by name, NIC, or phone..." value="<?= htmlspecialchars($search) ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Status</label>
+                    <select name="is_active" class="form-select form-select-sm">
                         <option value="">All States</option>
                         <option value="1" <?= $is_active_filter === '1' ? 'selected' : '' ?>>Active</option>
                         <option value="0" <?= $is_active_filter === '0' ? 'selected' : '' ?>>Inactive</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Search</button>
-                    <?php if ($search || $is_active_filter !== ''): ?>
-                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-search"></i> Filter</button>
+                    <?php if ($search || $is_active_filter !== '' || $date_from || $date_to): ?>
+                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>

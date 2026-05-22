@@ -7,6 +7,8 @@ include '../../includes/sidebar.php';
 
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+$date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : '';
+$date_to = isset($_GET['date_to']) ? mysqli_real_escape_string($conn, $_GET['date_to']) : '';
 
 $where = [];
 $where[] = active_villa_where('r');
@@ -15,6 +17,12 @@ if ($search !== '') {
 }
 if ($status !== '') {
     $where[] = "r.status = '$status'";
+}
+if ($date_from !== '') {
+    $where[] = "DATE(r.created_at) >= '$date_from'";
+}
+if ($date_to !== '') {
+    $where[] = "DATE(r.created_at) <= '$date_to'";
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
@@ -52,14 +60,21 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Res ID or Customer Name..." value="<?= htmlspecialchars($search) ?>">
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($date_from) ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($date_to) ?>">
                 </div>
                 <div class="col-md-4">
-                    <select name="status" class="form-select">
+                    <label class="form-label small text-muted">Search</label>
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Res ID or Customer Name..." value="<?= htmlspecialchars($search) ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Status</label>
+                    <select name="status" class="form-select form-select-sm">
                         <option value="">All Statuses</option>
                         <option value="Pending" <?= $status == 'Pending' ? 'selected' : '' ?>>Pending</option>
                         <option value="Confirmed" <?= $status == 'Confirmed' ? 'selected' : '' ?>>Confirmed</option>
@@ -68,10 +83,10 @@ $reservations = mysqli_query($conn, "SELECT r.*, c.full_name, rm.room_number
                         <option value="Cancelled" <?= $status == 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
-                    <?php if ($search || $status): ?>
-                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                <div class="col-md-2 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $status || $date_from || $date_to): ?>
+                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>

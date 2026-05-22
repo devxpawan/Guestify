@@ -118,7 +118,7 @@
                     <span>Income & Expenses</span>
                 </a>
                 <?php if (has_role(['Admin', 'Cashier'])): ?>
-                <a href="<?= $base_url ?>modules/billing/index.php" class="sidebar-link <?= is_active_link(['/modules/billing/index.php', '/modules/billing/create.php', '/modules/billing/payments.php', '/modules/billing/view.php', '/modules/billing/print.php']) ? 'active' : '' ?>" data-page="billing">
+                <a href="<?= $base_url ?>modules/billing/index.php" class="sidebar-link <?= is_active_link(['/modules/billing/index.php', '/modules/billing/payments.php', '/modules/billing/view.php', '/modules/billing/print.php']) ? 'active' : '' ?>" data-page="billing">
                     <i class="bi bi-receipt"></i>
                     <span>Billing</span>
                 </a>
@@ -150,10 +150,6 @@
                 <a href="<?= $base_url ?>admin/audit_logs.php" class="sidebar-link <?= is_active_link('/admin/audit_logs.php') ? 'active' : '' ?>" data-page="audit_logs">
                     <i class="bi bi-journal-text"></i>
                     <span>Audit Logs</span>
-                </a>
-                <a href="<?= $base_url ?>modules/branding/index.php" class="sidebar-link <?= is_active_link('/modules/branding/index.php') ? 'active' : '' ?>" data-page="branding">
-                    <i class="bi bi-palette"></i>
-                    <span>Branding</span>
                 </a>
             </div>
             <?php endif; ?>

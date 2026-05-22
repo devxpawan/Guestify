@@ -7,18 +7,19 @@ if (!has_role(['Admin', 'Manager'])) {
     exit();
 }
 
-$error = '';
-$success = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add'])) {
         $name = mysqli_real_escape_string($conn, trim($_POST['position_name']));
         if (empty($name)) {
-            $error = 'Position name is required.';
+            $_SESSION['error'] = 'Position name is required.';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } else {
             $check = mysqli_query($conn, "SELECT id FROM staff_positions WHERE position_name='$name' AND " . active_villa_where_raw());
             if (mysqli_num_rows($check) > 0) {
-                $error = 'Position already exists.';
+                $_SESSION['error'] = 'Position already exists.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             } else {
                 $villa_id = active_villa_id();
                 mysqli_query($conn, "INSERT INTO staff_positions (villa_id, position_name) VALUES ($villa_id, '$name')");
@@ -63,13 +64,6 @@ include '../../includes/sidebar.php';
             <a href="index.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Staff</a>
         </div>
     </div>
-
-    <?php if (isset($_SESSION['success'])): ?>
-    <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
 
     <div class="row g-4">
         <div class="col-md-5">

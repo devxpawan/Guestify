@@ -13,16 +13,16 @@ if (!has_role(['Admin', 'Cashier'])) {
 
 $id = (int)$_GET['id'];
 
-$error = '';
-$success = '';
+
 
 // --- POST HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
-                                                       FROM invoices i 
-                                                       JOIN reservations r ON i.reservation_id = r.id 
-                                                       JOIN customers c ON r.customer_id = c.id 
-                                                       WHERE i.id=$id AND " . active_villa_where('i')));
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number 
+                                                   FROM invoices i 
+                                                   JOIN reservations r ON i.reservation_id = r.id 
+                                                   JOIN customers c ON r.customer_id = c.id 
+                                                   JOIN rooms rm ON r.room_id = rm.id
+                                                   WHERE i.id=$id AND " . active_villa_where('i')));
     if (!$invoice) {
         header('Location: index.php');
         exit();
@@ -35,9 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $method = mysqli_real_escape_string($conn, $_POST['payment_method']);
 
     if ($amount <= 0) {
-        $error = 'Invalid amount.';
+        $_SESSION['error'] = 'Invalid amount.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     } elseif ($amount > $remaining) {
-        $error = 'Amount exceeds remaining balance (' . htmlspecialchars($global_currency) . number_format($remaining, 2) . ').';
+        $_SESSION['error'] = 'Amount exceeds remaining balance (' . htmlspecialchars($global_currency) . number_format($remaining, 2) . ').';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     } else {
         $villa_id = active_villa_id();
         mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method, villa_id) VALUES ($id, $amount, '$method', $villa_id)");
@@ -58,10 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // --- DISPLAY DATA ---
-$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number 
                                                    FROM invoices i 
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
+                                                   JOIN rooms rm ON r.room_id = rm.id
                                                    WHERE i.id=$id AND " . active_villa_where('i')));
 if (!$invoice) {
     header('Location: index.php');
@@ -73,6 +78,8 @@ $remaining = $invoice['grand_total'] - $paid_total;
 
 $payments = mysqli_query($conn, "SELECT * FROM payments WHERE invoice_id=$id AND " . active_villa_where() . " ORDER BY payment_date DESC");
 
+$items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id = $id ORDER BY id ASC");
+
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 ?>
@@ -81,18 +88,11 @@ include '../../includes/sidebar.php';
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h2><i class="bi bi-credit-card"></i> Payments for Invoice #<?= $id ?></h2>
-                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Customer: <strong><?= htmlspecialchars($invoice['full_name']) ?></strong> &mdash; Check-in: <?= date('M d, Y', strtotime($invoice['check_in'])) ?> &mdash; Check-out: <?= date('M d, Y', strtotime($invoice['check_out'])) ?></p>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Customer: <strong><?= htmlspecialchars($invoice['full_name']) ?></strong> &mdash; Room: <strong><?= htmlspecialchars($invoice['room_number']) ?></strong> &mdash; Check-in: <?= date('M d, Y', strtotime($invoice['check_in'])) ?> &mdash; Check-out: <?= date('M d, Y', strtotime($invoice['check_out'])) ?></p>
             </div>
             <a href="index.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Invoices</a>
         </div>
     </div>
-
-    <?php if (isset($_SESSION['success'])): ?>
-    <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
 
     <div class="row g-4">
         <!-- Left: Summary + Payment Form -->
@@ -144,8 +144,43 @@ include '../../includes/sidebar.php';
             <?php endif; ?>
         </div>
 
-        <!-- Right: Payment History -->
+        <!-- Right: Room & Services + Payment History -->
         <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h5><i class="bi bi-door-open"></i> Room & Services</h5></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Item</th>
+                                    <th class="text-end">Qty</th>
+                                    <th class="text-end">Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $has_items = false; while ($item = mysqli_fetch_assoc($items)): $has_items = true; ?>
+                                <tr>
+                                    <td><span class="badge bg-secondary"><?= htmlspecialchars($invoice['room_number']) ?></span></td>
+                                    <td><?= htmlspecialchars($item['item_name']) ?></td>
+                                    <td class="text-end"><?= $item['quantity'] ?></td>
+                                    <td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($item['price'], 2) ?></td>
+                                    <td class="text-end"><?= htmlspecialchars($global_currency) ?><?= number_format($item['total'], 2) ?></td>
+                                </tr>
+                                <?php endwhile; ?>
+                                <?php if (!$has_items): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox"></i> No items found.</td>
+                                </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm">
                 <div class="card-header"><h5><i class="bi bi-clock-history"></i> Payment History</h5></div>
                 <div class="card-body p-0">

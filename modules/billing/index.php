@@ -13,6 +13,8 @@ include '../../includes/sidebar.php';
 
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+$date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : '';
+$date_to = isset($_GET['date_to']) ? mysqli_real_escape_string($conn, $_GET['date_to']) : '';
 
 $where = [];
 if ($search !== '') {
@@ -20,6 +22,12 @@ if ($search !== '') {
 }
 if ($status !== '') {
     $where[] = "i.payment_status = '$status'";
+}
+if ($date_from !== '') {
+    $where[] = "DATE(i.created_at) >= '$date_from'";
+}
+if ($date_to !== '') {
+    $where[] = "DATE(i.created_at) <= '$date_to'";
 }
 $where[] = active_villa_where('i');
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
@@ -33,10 +41,11 @@ $count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM invoices i JOIN 
 $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
-$invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
+$invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number 
                                  FROM invoices i 
                                  JOIN reservations r ON i.reservation_id = r.id 
                                  JOIN customers c ON r.customer_id = c.id 
+                                 JOIN rooms rm ON r.room_id = rm.id
                                  $where_clause
                                  ORDER BY i.id DESC LIMIT $offset, $per_page");
 ?>
@@ -47,31 +56,40 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                 <h2><i class="bi bi-receipt"></i> Billing & Invoices</h2>
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage invoices and payment tracking</p>
             </div>
-            <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Invoice</a>
         </div>
     </div>
 
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-5">
-                    <div class="input-group">
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($date_from) ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($date_to) ?>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Search</label>
+                    <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Invoice # or Customer Name..." value="<?= htmlspecialchars($search) ?>">
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Invoice # or Customer..." value="<?= htmlspecialchars($search) ?>">
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <select name="status" class="form-select">
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Payment Status</label>
+                    <select name="status" class="form-select form-select-sm">
                         <option value="">All Statuses</option>
                         <option value="Paid" <?= $status == 'Paid' ? 'selected' : '' ?>>Paid</option>
                         <option value="Partial" <?= $status == 'Partial' ? 'selected' : '' ?>>Partial</option>
                         <option value="Unpaid" <?= $status == 'Unpaid' ? 'selected' : '' ?>>Unpaid</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
-                    <?php if ($search || $status): ?>
-                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                <div class="col-md-3 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $status || $date_from || $date_to): ?>
+                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>
@@ -83,7 +101,7 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Invoice #</th><th>Customer</th><th>Room Charges</th><th>Product Charges</th><th>Discount</th><th>Total</th><th>Payment</th><th>Actions</th>
+                        <th>Invoice #</th><th>Customer</th><th>Room</th><th>Room Charges</th><th>Product Charges</th><th>Discount</th><th>Total</th><th>Payment</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,14 +116,19 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                                 <?= htmlspecialchars($inv['full_name']) ?>
                             </div>
                         </td>
+                        <td><span class="badge bg-secondary"><?= htmlspecialchars($inv['room_number']) ?></span></td>
                         <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['room_charges'], 2) ?></td>
                         <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['product_charges'], 2) ?></td>
                         <td class="text-success">-<?= htmlspecialchars($global_currency) ?><?= number_format($inv['discount'], 2) ?></td>
                         <td><strong class="text-primary"><?= htmlspecialchars($global_currency) ?><?= number_format($inv['grand_total'], 2) ?></strong></td>
                         <td>
-                            <span class="badge badge-<?= $inv['payment_status'] == 'Paid' ? 'success' : ($inv['payment_status'] == 'Partial' ? 'warning' : 'danger') ?>">
-                                <i class="bi bi-<?= $inv['payment_status'] == 'Paid' ? 'check-circle' : ($inv['payment_status'] == 'Partial' ? 'clock' : 'x-circle') ?>"></i> <?= $inv['payment_status'] ?>
-                            </span>
+                            <?php if ($inv['payment_status'] == 'Paid'): ?>
+                            <span class="badge badge-success"><i class="bi bi-check-circle"></i> Paid</span>
+                            <?php elseif ($inv['payment_status'] == 'Partial'): ?>
+                            <span class="badge badge-warning"><i class="bi bi-clock"></i> Partial</span>
+                            <?php else: ?>
+                            <span class="badge badge-danger"><i class="bi bi-x-circle"></i> Unpaid</span>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div class="action-btns">

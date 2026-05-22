@@ -3,7 +3,7 @@ require_once __DIR__ . '/villa_context.php';
 
 // Load villa-specific branding
 $villa_branding = get_villa_branding();
-$global_company_name = $villa_branding['company_name'] ?? 'VillaRS';
+$global_company_name = $villa_branding['name'] ?? 'VillaRS';
 $global_currency = $villa_branding['currency_symbol'] ?? '$';
 $global_logo = $villa_branding['logo_path'] ?? '';
 $global_favicon = $villa_branding['favicon_path'] ?? '';

@@ -68,23 +68,23 @@ if ($res) {
 
                     $grand_total = $room_charges + $product_charges;
 
-                    $query = "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status) 
-                              VALUES ($id, $room_charges, $product_charges, 0, $grand_total, 'Unpaid')";
+                    $query = "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status, villa_id) 
+                              VALUES ($id, $room_charges, $product_charges, 0, $grand_total, 'Unpaid', $villa_id)";
                     
                     if (mysqli_query($conn, $query)) {
                         $invoice_id = mysqli_insert_id($conn);
                         
                         // Insert room charge item
-                        mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) 
-                                             VALUES ($invoice_id, 'Room', 'Room Charges ({$res_billing['check_in']} to {$res_billing['check_out']})', $days, $price, $room_charges)");
+                        mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total, villa_id) 
+                                             VALUES ($invoice_id, 'Room', 'Room Charges ({$res_billing['check_in']} to {$res_billing['check_out']})', $days, $price, $room_charges, $villa_id)");
                         $invoice_item_id = mysqli_insert_id($conn);
 
                         // Transfer Service Orders to Invoice Items
                         $service_orders = mysqli_query($conn, "SELECT so.*, p.product_name FROM service_orders so JOIN products p ON so.product_id = p.id WHERE so.reservation_id = $id AND so.status != 'Cancelled'");
                         while ($so = mysqli_fetch_assoc($service_orders)) {
                             $total = $so['quantity'] * $so['price'];
-                            mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) 
-                                                 VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total)");
+                            mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total, villa_id) 
+                                                 VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total, $villa_id)");
                             $invoice_item_id = mysqli_insert_id($conn);
                         }
                         $_SESSION['success'] = "Guest checked out successfully! Invoice #{$invoice_id} has been auto-generated.";

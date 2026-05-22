@@ -23,9 +23,6 @@ if (!$order) {
     exit();
 }
 
-$error = '';
-$success = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -44,18 +41,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = mysqli_real_escape_string($conn, $_POST['status']);
 
         if ($quantity <= 0) {
-            $error = 'Quantity must be at least 1.';
+            $_SESSION['error'] = 'Quantity must be at least 1.';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } else {
             $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id AND " . active_villa_where_raw()));
             if (!$prod) {
-                $error = 'Invalid product.';
+                $_SESSION['error'] = 'Invalid product.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             } else {
                 // Calculate stock difference
                 $old_qty = $order['quantity'];
                 $diff = $quantity - $old_qty;
 
                 if ($diff > 0 && $prod['quantity'] < $diff) {
-                    $error = 'Insufficient stock! Only ' . $prod['quantity'] . ' available.';
+                    $_SESSION['error'] = 'Insufficient stock! Only ' . $prod['quantity'] . ' available.';
+                    header("Location: " . $_SERVER['REQUEST_URI']);
+                    exit();
                 } else {
                     // Adjust stock
                     if ($diff != 0) {
@@ -93,10 +96,6 @@ include '../../includes/sidebar.php';
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <?php if ($error): ?>
-                    <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-                    <?php endif; ?>
-
                     <form method="POST">
                         <div class="mb-3">
                             <label class="form-label">Product</label>

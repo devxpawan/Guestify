@@ -11,6 +11,11 @@ if (!has_role(['Admin'])) {
 // Toggle villa status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     $id = (int)$_POST['id'];
+    if ($id === active_villa_id()) {
+        $_SESSION['error'] = 'You cannot deactivate the villa you are currently logged into.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
     $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT status FROM villas WHERE id=$id"));
     if ($item) {
         $new_status = $item['status'] === 'Active' ? 'Inactive' : 'Active';
@@ -28,7 +33,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['
 
 $where = [];
 if ($search !== '') {
-    $where[] = "(name LIKE '%$search%' OR company_name LIKE '%$search%')";
+    $where[] = "name LIKE '%$search%'";
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
@@ -40,7 +45,7 @@ $count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM villas $where_cl
 $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
-$villas = mysqli_query($conn, "SELECT v.*, (SELECT COUNT(*) FROM rooms WHERE villa_id = v.id) as room_count, (SELECT COUNT(*) FROM user_villas WHERE villa_id = v.id) as user_count FROM villas v $where_clause ORDER BY v.id ASC LIMIT $offset, $per_page");
+$villas = mysqli_query($conn, "SELECT v.*, (SELECT COUNT(*) FROM rooms WHERE villa_id = v.id) as room_count, (SELECT COUNT(*) FROM user_villas WHERE villa_id = v.id) as user_count, (SELECT COUNT(*) FROM staff WHERE villa_id = v.id) as staff_count FROM villas v $where_clause ORDER BY v.id ASC LIMIT $offset, $per_page");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
@@ -81,10 +86,9 @@ $villas = mysqli_query($conn, "SELECT v.*, (SELECT COUNT(*) FROM rooms WHERE vil
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Company</th>
-                        <th>Slug</th>
                         <th>Currency</th>
                         <th>Rooms</th>
+                        <th>Staff</th>
                         <th>Users</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -102,10 +106,9 @@ $villas = mysqli_query($conn, "SELECT v.*, (SELECT COUNT(*) FROM rooms WHERE vil
                                 <strong><?= htmlspecialchars($row['name']) ?></strong>
                             </div>
                         </td>
-                        <td><?= htmlspecialchars($row['company_name'] ?? '-') ?></td>
-                        <td><code><?= htmlspecialchars($row['slug']) ?></code></td>
                         <td><strong><?= htmlspecialchars($row['currency_symbol']) ?></strong></td>
                         <td><span class="badge bg-info"><?= $row['room_count'] ?></span></td>
+                        <td><span class="badge bg-warning text-dark"><?= $row['staff_count'] ?></span></td>
                         <td><span class="badge bg-secondary"><?= $row['user_count'] ?></span></td>
                         <td>
                             <span class="badge badge-<?= $row['status'] === 'Active' ? 'success' : 'danger' ?>">
@@ -115,12 +118,14 @@ $villas = mysqli_query($conn, "SELECT v.*, (SELECT COUNT(*) FROM rooms WHERE vil
                         <td>
                             <div class="action-btns d-flex gap-1">
                                 <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></a>
+                                <?php if ($row['id'] != active_villa_id()): ?>
                                 <form method="POST" style="display:inline">
                                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $row['status'] === 'Active' ? 'outline-warning' : 'outline-success' ?>" title="<?= $row['status'] === 'Active' ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                         <i class="fas fa-<?= $row['status'] === 'Active' ? 'ban' : 'check' ?>"></i>
                                     </button>
                                 </form>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

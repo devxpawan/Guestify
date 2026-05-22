@@ -27,6 +27,8 @@ include '../../includes/sidebar.php';
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 $position = isset($_GET['position']) ? mysqli_real_escape_string($conn, $_GET['position']) : '';
 $is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
+$date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : '';
+$date_to = isset($_GET['date_to']) ? mysqli_real_escape_string($conn, $_GET['date_to']) : '';
 
 $where = [active_villa_where_raw()];
 if ($search !== '') {
@@ -37,6 +39,12 @@ if ($position !== '') {
 }
 if ($is_active_filter !== '') {
     $where[] = "is_active = " . (int)$is_active_filter;
+}
+if ($date_from !== '') {
+    $where[] = "DATE(created_at) >= '$date_from'";
+}
+if ($date_to !== '') {
+    $where[] = "DATE(created_at) <= '$date_to'";
 }
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
@@ -69,31 +77,42 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search Name, Email, or Phone..." value="<?= htmlspecialchars($search) ?>">
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($date_from) ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($date_to) ?>">
                 </div>
                 <div class="col-md-3">
-                    <select name="position" class="form-select">
+                    <label class="form-label small text-muted">Search</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Name, Email, or Phone..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Position</label>
+                    <select name="position" class="form-select form-select-sm">
                         <option value="">All Positions</option>
                         <?php while($p = mysqli_fetch_assoc($positions_res)): ?>
                         <option value="<?= htmlspecialchars($p['position']) ?>" <?= $position == $p['position'] ? 'selected' : '' ?>><?= htmlspecialchars($p['position']) ?></option>
                         <?php endwhile; ?>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select name="is_active" class="form-select">
-                        <option value="">All States</option>
+                <div class="col-md-1">
+                    <label class="form-label small text-muted">State</label>
+                    <select name="is_active" class="form-select form-select-sm">
+                        <option value="">All</option>
                         <option value="1" <?= $is_active_filter === '1' ? 'selected' : '' ?>>Active</option>
                         <option value="0" <?= $is_active_filter === '0' ? 'selected' : '' ?>>Inactive</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
-                    <?php if ($search || $position || $is_active_filter !== ''): ?>
-                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                <div class="col-md-2 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <?php if ($search || $position || $is_active_filter !== '' || $date_from || $date_to): ?>
+                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>

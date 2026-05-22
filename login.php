@@ -6,15 +6,11 @@ if (isset($_SESSION['user_id'])) {
 }
 
 require_once 'config/database.php';
+require_once 'includes/villa_context.php';
 
-// Load branding from the first villa (or settings for backward compatibility)
-$branding_query = @mysqli_query($conn, "SELECT * FROM villas LIMIT 1");
-if (!$branding_query || mysqli_num_rows($branding_query) === 0) {
-    $branding_query = mysqli_query($conn, "SELECT * FROM settings LIMIT 1");
-}
-$branding = $branding_query ? mysqli_fetch_assoc($branding_query) : [];
+$branding = get_villa_branding();
 
-$global_company_name = $branding['company_name'] ?? 'VillaRS';
+$global_company_name = $branding['name'] ?? 'VillaRS';
 $global_logo = $branding['logo_path'] ?? '';
 $global_favicon = $branding['favicon_path'] ?? '';
 

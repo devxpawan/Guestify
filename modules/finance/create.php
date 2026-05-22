@@ -8,8 +8,7 @@ if (!has_role(['Admin', 'Manager', 'Cashier'])) {
     exit();
 }
 
-$error = '';
-$success = '';
+
 
 $categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . active_villa_where_raw() . " ORDER BY type, name");
 
@@ -22,9 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
 
     if ($amount <= 0) {
-        $error = 'Amount must be greater than 0.';
+        $_SESSION['error'] = 'Amount must be greater than 0.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     } elseif (empty($transaction_date)) {
-        $error = 'Please select a date.';
+        $_SESSION['error'] = 'Please select a date.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
     } else {
         $villa_id = (int)active_villa_id();
         $query = "INSERT INTO transactions (villa_id, type, category_id, amount, description, transaction_date, created_by)
@@ -36,7 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit();
         } else {
-            $error = 'Failed: ' . mysqli_error($conn);
+            $_SESSION['error'] = 'Failed: ' . mysqli_error($conn);
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         }
     }
 }
@@ -57,10 +62,6 @@ include '../../includes/sidebar.php';
 
     <div class="card">
         <div class="card-body">
-            <?php if ($error): ?>
-            <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
             <form method="POST">
                 <div class="mb-3">
                     <label class="form-label">Transaction Type</label>

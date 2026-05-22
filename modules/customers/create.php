@@ -13,6 +13,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
 
+    if (!empty($email) && !str_contains($email, '@')) {
+        $_SESSION['error'] = 'Email must contain @.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
+    if (!empty($phone) && (!ctype_digit($phone) || strlen($phone) !== 10)) {
+        $_SESSION['error'] = 'Phone must be exactly 10 digits.';
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
     $villa_id = active_villa_id();
     $query = "INSERT INTO customers (full_name, nic_passport, phone, email, address, villa_id) 
               VALUES ('$full_name', '$nic_passport', '$phone', '$email', '$address', $villa_id)";
@@ -46,7 +58,7 @@ include '../../includes/sidebar.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Phone</label>
-                    <input type="text" name="phone" class="form-control" required>
+                    <input type="text" name="phone" class="form-control" maxlength="10" oninput="this.value = this.value.replace(/\D/g, '')" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Email</label>
