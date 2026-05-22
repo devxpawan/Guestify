@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -50,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id";
             if (mysqli_query($conn, $query)) {
                 
-                // Prepare old and new values for logging
                 $old_reservation_data = [
                     'customer_id' => $res['customer_id'],
                     'room_id' => $res['room_id'],
@@ -72,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'status' => $status
                 ];
 
+                logAudit('UPDATE', 'reservations', $id, "Reservation #$id updated", $old_reservation_data, $new_reservation_data);
 
                 $_SESSION['success'] = 'Reservation updated successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);

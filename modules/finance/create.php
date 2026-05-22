@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Manager', 'Cashier'])) {
     header('Location: index.php');
@@ -28,6 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $query = "INSERT INTO transactions (type, category_id, amount, description, transaction_date, created_by)
                   VALUES ('$type', $category_id, $amount, '$description', '$transaction_date', $user_id)";
         if (mysqli_query($conn, $query)) {
+            $transaction_id = mysqli_insert_id($conn);
+            logAudit('CREATE', 'finance', $transaction_id, "$type transaction of $amount added");
             $_SESSION['success'] = 'Transaction added successfully!';
             header("Location: index.php");
             exit();

@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -91,6 +92,8 @@ $success = '';
                     'description' => $description,
                     'image' => empty($image_name) ? $room['image'] : $image_name
                 ];
+
+                logAudit('UPDATE', 'rooms', $id, "Room $room_number updated", $old_room_data, $new_room_data);
 
                 $_SESSION['success'] = 'Room updated successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);

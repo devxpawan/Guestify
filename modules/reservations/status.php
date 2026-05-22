@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     $_SESSION['error'] = 'Unauthorized access.';
@@ -23,6 +24,7 @@ if ($res) {
     // Update reservation status
     mysqli_query($conn, "UPDATE reservations SET status='$new_status' WHERE id=$id");
     
+    logAudit('UPDATE', 'reservations', $id, "Reservation status changed from $old_status to $new_status", ['status' => $old_status], ['status' => $new_status]);
 
     // Update room status accordingly
     if ($new_status == 'Checked-In') {

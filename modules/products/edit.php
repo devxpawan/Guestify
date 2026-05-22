@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 $id = (int)$_GET['id'];
 $product = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$id"));
@@ -21,6 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "UPDATE products SET product_name='$product_name', category='$category', quantity=$quantity, price=$price WHERE id=$id";
     if (mysqli_query($conn, $query)) {
+        $old_product_data = [
+            'product_name' => $product['product_name'],
+            'category' => $product['category'],
+            'quantity' => $product['quantity'],
+            'price' => $product['price']
+        ];
+        $new_product_data = [
+            'product_name' => $product_name,
+            'category' => $category,
+            'quantity' => $quantity,
+            'price' => $price
+        ];
+
+        logAudit('UPDATE', 'products', $id, "Product $product_name updated", $old_product_data, $new_product_data);
+
         $_SESSION['success'] = 'Product updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();

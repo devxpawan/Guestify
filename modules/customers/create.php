@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 $error = '';
 $success = '';
@@ -16,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               VALUES ('$full_name', '$nic_passport', '$phone', '$email', '$address')";
     if (mysqli_query($conn, $query)) {
         $customer_id = mysqli_insert_id($conn);
+        logAudit('CREATE', 'customers', $customer_id, "Customer $full_name added");
         $_SESSION['success'] = 'Customer added successfully!';
         header("Location: index.php");
         exit();

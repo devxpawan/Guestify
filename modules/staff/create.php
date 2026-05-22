@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Manager'])) {
     header('Location: index.php');
@@ -23,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $query = "INSERT INTO staff (name, position, phone, nic, email, salary) VALUES ('$name', '$position', '$phone', '$nic', '$email', $salary)";
     if (mysqli_query($conn, $query)) {
         $staff_id = mysqli_insert_id($conn);
+        logAudit('CREATE', 'staff', $staff_id, "Staff member $name added");
         $_SESSION['success'] = 'Staff added successfully!';
         header("Location: index.php");
         exit();

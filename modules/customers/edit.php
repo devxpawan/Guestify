@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 $id = (int)$_GET['id'];
 $customer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM customers WHERE id=$id"));
@@ -35,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => $email,
             'address' => $address
         ];
+
+        logAudit('UPDATE', 'customers', $id, "Customer $full_name updated", $old_customer_data, $new_customer_data);
 
         $_SESSION['success'] = 'Customer updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);

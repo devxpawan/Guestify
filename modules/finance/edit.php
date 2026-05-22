@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Manager', 'Cashier'])) {
     header('Location: index.php');
@@ -33,6 +34,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $query = "UPDATE transactions SET type='$type', category_id=$category_id, amount=$amount, description='$description', transaction_date='$transaction_date' WHERE id=$id";
         if (mysqli_query($conn, $query)) {
+            $old_transaction_data = [
+                'type' => $transaction['type'],
+                'category_id' => $transaction['category_id'],
+                'amount' => $transaction['amount'],
+                'description' => $transaction['description'],
+                'transaction_date' => $transaction['transaction_date']
+            ];
+            $new_transaction_data = [
+                'type' => $type,
+                'category_id' => $category_id,
+                'amount' => $amount,
+                'description' => $description,
+                'transaction_date' => $transaction_date
+            ];
+
+            logAudit('UPDATE', 'finance', $id, "$type transaction updated", $old_transaction_data, $new_transaction_data);
+
             $_SESSION['success'] = 'Transaction updated successfully!';
             header("Location: index.php");
             exit();

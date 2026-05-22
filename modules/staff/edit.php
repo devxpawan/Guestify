@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Manager'])) {
     header('Location: index.php');
@@ -44,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => $email,
             'salary' => $salary
         ];
+
+        logAudit('UPDATE', 'staff', $id, "Staff member $name updated", $old_staff_data, $new_staff_data);
 
         $_SESSION['success'] = 'Staff updated!';
         header("Location: " . $_SERVER['REQUEST_URI']);

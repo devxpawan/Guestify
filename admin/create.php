@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/session.php';
 require_once '../config/database.php';
+require_once '../includes/audit.php';
 
 if (!has_role(['Admin'])) {
     header('Location: ../dashboard.php');
@@ -19,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
         $error = 'Username already exists!';
     } else {
         mysqli_query($conn, "INSERT INTO users (username, password, role_id) VALUES ('$username', '$password', $role_id)");
+        $new_user_id = mysqli_insert_id($conn);
+        logAudit('CREATE', 'users', $new_user_id, "User $username created with role ID $role_id");
         $_SESSION['success'] = 'User created successfully!';
         header('Location: users.php');
         exit();

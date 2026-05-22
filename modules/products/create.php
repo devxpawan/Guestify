@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 $error = '';
 $success = '';
@@ -15,6 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $query = "INSERT INTO products (product_name, category, quantity, price) VALUES ('$product_name', '$category', $quantity, $price)";
     if (mysqli_query($conn, $query)) {
+        $product_id = mysqli_insert_id($conn);
+        logAudit('CREATE', 'products', $product_id, "Product $product_name added");
         $_SESSION['success'] = 'Product added successfully!';
         header("Location: index.php");
         exit();

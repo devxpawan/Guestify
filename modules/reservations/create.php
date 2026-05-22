@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
+require_once '../../includes/audit.php';
 
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
@@ -67,6 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending')";
                 if (mysqli_query($conn, $query)) {
                     $reservation_id = mysqli_insert_id($conn);
+
+                    logAudit('CREATE', 'reservations', $reservation_id, "Reservation created for customer ID $customer_id, room ID $room_id");
 
                     
                     // Calculate room charges based on booking type & duration
