@@ -3,13 +3,15 @@ require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/audit.php';
 
+$villa_id = (int)active_villa_id();
+
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
     exit();
 }
 
-$types = mysqli_query($conn, "SELECT * FROM room_types");
-$branding = mysqli_fetch_assoc(mysqli_query($conn, "SELECT company_name FROM settings LIMIT 1"));
+$types = mysqli_query($conn, "SELECT * FROM room_types WHERE villa_id=$villa_id");
+$branding = get_villa_branding();
 $company_name = $branding['company_name'] ?? 'Villa';
     $error = '';
     $success = '';
@@ -45,12 +47,12 @@ $company_name = $branding['company_name'] ?? 'Villa';
             }
         }
 
-        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_number='$room_number'");
+        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_number='$room_number' AND villa_id=$villa_id");
         if (mysqli_num_rows($check) > 0) {
             $error = 'Room number already exists!';
         } else {
-            $query = "INSERT INTO rooms (room_number, room_type_id, capacity, price, price_day, price_night, price_short, description, image) 
-                      VALUES ('$room_number', $room_type_id, $capacity, $price, $price_day, $price_night, $price_short, '$description', '$image_name')";
+            $query = "INSERT INTO rooms (room_number, room_type_id, capacity, price, price_day, price_night, price_short, description, image, villa_id) 
+                      VALUES ('$room_number', $room_type_id, $capacity, $price, $price_day, $price_night, $price_short, '$description', '$image_name', $villa_id)";
             if (mysqli_query($conn, $query)) {
                 $room_id = mysqli_insert_id($conn);
                 logAudit('CREATE', 'rooms', $room_id, "Room $room_number added");

@@ -7,8 +7,12 @@ if (isset($_SESSION['user_id'])) {
 
 require_once 'config/database.php';
 
-$branding_query = mysqli_query($conn, "SELECT * FROM settings LIMIT 1");
-$branding = mysqli_fetch_assoc($branding_query);
+// Load branding from the first villa (or settings for backward compatibility)
+$branding_query = @mysqli_query($conn, "SELECT * FROM villas LIMIT 1");
+if (!$branding_query || mysqli_num_rows($branding_query) === 0) {
+    $branding_query = mysqli_query($conn, "SELECT * FROM settings LIMIT 1");
+}
+$branding = $branding_query ? mysqli_fetch_assoc($branding_query) : [];
 
 $global_company_name = $branding['company_name'] ?? 'VillaRS';
 $global_logo = $branding['logo_path'] ?? '';
@@ -30,6 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
             $_SESSION['role'] = $row['role_name'];
+
+            // Set default villa
+            $uid = (int)$row['id'];
+            $vq = mysqli_query($conn, "SELECT villa_id FROM user_villas WHERE user_id = $uid AND is_default = 1 LIMIT 1");
+            if ($vr = mysqli_fetch_assoc($vq)) {
+                $_SESSION['villa_id'] = (int)$vr['villa_id'];
+            } else {
+                $vq2 = mysqli_query($conn, "SELECT villa_id FROM user_villas WHERE user_id = $uid LIMIT 1");
+                if ($vr2 = mysqli_fetch_assoc($vq2)) {
+                    $_SESSION['villa_id'] = (int)$vr2['villa_id'];
+                }
+            }
+
             header('Location: dashboard.php');
             exit();
         }

@@ -2,8 +2,7 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 
-$branding_query = mysqli_query($conn, "SELECT currency_symbol FROM settings LIMIT 1");
-$branding = mysqli_fetch_assoc($branding_query);
+$branding = get_villa_branding();
 $global_currency = $branding['currency_symbol'] ?? '$';
 
 
@@ -13,25 +12,25 @@ if (!has_role(['Admin', 'Cashier'])) {
 }
 
 $id = (int)$_GET['id'];
-$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
-                                                   FROM invoices i 
-                                                   JOIN reservations r ON i.reservation_id = r.id 
-                                                   JOIN customers c ON r.customer_id = c.id 
-                                                   WHERE i.id=$id"));
-if (!$invoice) {
-    header('Location: index.php');
-    exit();
-}
-
-$paid_total = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=$id"))[0];
-$remaining = $invoice['grand_total'] - $paid_total;
 
 $error = '';
 $success = '';
 
-$payments = mysqli_query($conn, "SELECT * FROM payments WHERE invoice_id=$id ORDER BY payment_date DESC");
-
+// --- POST HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
+                                                       FROM invoices i 
+                                                       JOIN reservations r ON i.reservation_id = r.id 
+                                                       JOIN customers c ON r.customer_id = c.id 
+                                                       WHERE i.id=$id AND " . active_villa_where('i')));
+    if (!$invoice) {
+        header('Location: index.php');
+        exit();
+    }
+
+    $paid_total = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=$id AND " . active_villa_where()))[0];
+    $remaining = $invoice['grand_total'] - $paid_total;
+
     $amount = (float)$_POST['amount'];
     $method = mysqli_real_escape_string($conn, $_POST['payment_method']);
 
@@ -40,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($amount > $remaining) {
         $error = 'Amount exceeds remaining balance (' . htmlspecialchars($global_currency) . number_format($remaining, 2) . ').';
     } else {
-        mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method) VALUES ($id, $amount, '$method')");
+        $villa_id = active_villa_id();
+        mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method, villa_id) VALUES ($id, $amount, '$method', $villa_id)");
         $payment_id = mysqli_insert_id($conn);
 
         $new_paid = $paid_total + $amount;
@@ -56,6 +56,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+// --- DISPLAY DATA ---
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name 
+                                                   FROM invoices i 
+                                                   JOIN reservations r ON i.reservation_id = r.id 
+                                                   JOIN customers c ON r.customer_id = c.id 
+                                                   WHERE i.id=$id AND " . active_villa_where('i')));
+if (!$invoice) {
+    header('Location: index.php');
+    exit();
+}
+
+$paid_total = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=$id AND " . active_villa_where()))[0];
+$remaining = $invoice['grand_total'] - $paid_total;
+
+$payments = mysqli_query($conn, "SELECT * FROM payments WHERE invoice_id=$id AND " . active_villa_where() . " ORDER BY payment_date DESC");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

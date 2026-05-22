@@ -3,22 +3,24 @@ require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/audit.php';
 
+$villa_id = (int)active_villa_id();
+
 if (!has_role(['Admin', 'Receptionist'])) {
     header('Location: index.php');
     exit();
 }
 
 $id = (int)$_GET['id'];
-$room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id"));
+$room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM rooms WHERE id=$id AND villa_id=$villa_id"));
 if (!$room) {
     header('Location: index.php');
     exit();
 }
 
-$branding = mysqli_fetch_assoc(mysqli_query($conn, "SELECT company_name FROM settings LIMIT 1"));
+$branding = get_villa_branding();
 $company_name = $branding['company_name'] ?? 'Villa';
 
-$types = mysqli_query($conn, "SELECT * FROM room_types");
+$types = mysqli_query($conn, "SELECT * FROM room_types WHERE villa_id=$villa_id");
 $error = '';
 $success = '';
 
@@ -60,13 +62,13 @@ $success = '';
             }
         }
 
-        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_number='$room_number' AND id != $id");
+        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_number='$room_number' AND villa_id=$villa_id AND id != $id");
         if (mysqli_num_rows($check) > 0) {
             $error = 'Room number already exists!';
         } else {
             $query = "UPDATE rooms SET room_number='$room_number', room_type_id=$room_type_id, capacity=$capacity, 
                       price=$price, price_day=$price_day, price_night=$price_night, price_short=$price_short,
-                      status='$status', description='$description' $image_query WHERE id=$id";
+                      status='$status', description='$description' $image_query WHERE id=$id AND villa_id=$villa_id";
             if (mysqli_query($conn, $query)) {
                 $old_room_data = [
                     'room_number' => $room['room_number'],

@@ -16,7 +16,7 @@ $res_query = "SELECT r.id, c.full_name, rm.room_number
               FROM reservations r 
               JOIN customers c ON r.customer_id = c.id 
               JOIN rooms rm ON r.room_id = rm.id 
-              WHERE r.id = $reservation_id AND r.status = 'Checked-In'";
+              WHERE r.id = $reservation_id AND r.status = 'Checked-In' AND " . active_villa_where('r');
 $res = mysqli_fetch_assoc(mysqli_query($conn, $res_query));
 
 if (!$res) {
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($quantity <= 0) {
         $error = 'Quantity must be at least 1.';
     } else {
-        $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id"));
+        $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id AND " . active_villa_where_raw()));
         
         if (!$prod) {
             $error = 'Invalid product selected.';
@@ -39,11 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Insufficient stock! Only ' . $prod['quantity'] . ' left.';
         } else {
             $price = $prod['price'];
-            $query = "INSERT INTO service_orders (reservation_id, product_id, quantity, price, status) 
-                      VALUES ($reservation_id, $product_id, $quantity, $price, 'Served')";
+            $villa_id = (int)active_villa_id();
+            $query = "INSERT INTO service_orders (reservation_id, product_id, quantity, price, status, villa_id) 
+                      VALUES ($reservation_id, $product_id, $quantity, $price, 'Served', $villa_id)";
             
             if (mysqli_query($conn, $query)) {
-                mysqli_query($conn, "UPDATE products SET quantity = quantity - $quantity WHERE id=$product_id");
+                mysqli_query($conn, "UPDATE products SET quantity = quantity - $quantity WHERE id=$product_id AND " . active_villa_where_raw());
                 $_SESSION['success'] = 'Order placed successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$products = mysqli_query($conn, "SELECT * FROM products WHERE quantity > 0 AND is_active = 1 ORDER BY product_name");
+$products = mysqli_query($conn, "SELECT * FROM products WHERE quantity > 0 AND is_active = 1 AND " . active_villa_where_raw() . " ORDER BY product_name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

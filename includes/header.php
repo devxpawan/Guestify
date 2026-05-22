@@ -1,11 +1,18 @@
 <?php
-$branding_query = mysqli_query($conn, "SELECT * FROM settings LIMIT 1");
-$branding = mysqli_fetch_assoc($branding_query);
+require_once __DIR__ . '/villa_context.php';
 
-$global_company_name = $branding['company_name'] ?? 'VillaRS';
-$global_currency = $branding['currency_symbol'] ?? '$';
-$global_logo = $branding['logo_path'] ?? '';
-$global_favicon = $branding['favicon_path'] ?? '';
+// Load villa-specific branding
+$villa_branding = get_villa_branding();
+$global_company_name = $villa_branding['company_name'] ?? 'VillaRS';
+$global_currency = $villa_branding['currency_symbol'] ?? '$';
+$global_logo = $villa_branding['logo_path'] ?? '';
+$global_favicon = $villa_branding['favicon_path'] ?? '';
+
+// Get user's villas for the switcher dropdown
+$user_villas_list = [];
+if (isset($_SESSION['user_id'])) {
+    $user_villas_list = get_user_villas();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -36,7 +43,30 @@ $global_favicon = $branding['favicon_path'] ?? '';
             </div>
         </form>
 
-        <div class="ms-auto">
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <!-- Villa Switcher -->
+            <?php if (count($user_villas_list) > 1): ?>
+            <div class="dropdown">
+                <button class="btn dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" style="font-size: 0.8rem; padding: 0.3rem 0.6rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <i class="bi bi-building"></i>
+                    <span><?= htmlspecialchars($villa_branding['name'] ?? 'Villa') ?></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 200px;">
+                    <?php foreach ($user_villas_list as $v): ?>
+                    <li>
+                        <a class="dropdown-item <?= ($v['id'] == active_villa_id()) ? 'active' : '' ?>" href="<?= $base_url ?>switch_villa.php?villa_id=<?= $v['id'] ?>">
+                            <i class="bi bi-building me-2"></i><?= htmlspecialchars($v['name']) ?>
+                            <?php if ($v['id'] == active_villa_id()): ?>
+                            <i class="bi bi-check ms-2 text-primary"></i>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
+
+            <!-- User Dropdown -->
             <div class="dropdown">
                 <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                     <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">

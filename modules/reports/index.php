@@ -10,19 +10,19 @@ if (!has_role(['Admin', 'Manager', 'Receptionist'])) {
 include '../../includes/header.php';
 include '../../includes/sidebar.php';
 
-$daily = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue FROM reservations r LEFT JOIN invoices i ON r.id = i.reservation_id WHERE r.created_at >= CURDATE()"));
-$monthly_res = mysqli_query($conn, "SELECT DATE_FORMAT(r.created_at, '%Y-%m') as month, COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue FROM reservations r LEFT JOIN invoices i ON r.id = i.reservation_id GROUP BY month ORDER BY month DESC LIMIT 6");
-$occupancy = mysqli_query($conn, "SELECT rm.room_number, t.type_name, rm.status FROM rooms rm JOIN room_types t ON rm.room_type_id = t.id");
-$top_customers = mysqli_query($conn, "SELECT c.full_name, COUNT(r.id) as bookings, COALESCE(SUM(i.grand_total),0) as spent FROM customers c LEFT JOIN reservations r ON c.id = r.customer_id LEFT JOIN invoices i ON r.id = i.reservation_id GROUP BY c.id ORDER BY spent DESC LIMIT 5");
-$staff_report = mysqli_query($conn, "SELECT position, COUNT(*) as total, SUM(salary) as total_salary FROM staff GROUP BY position");
-$product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SUM(total) as total FROM invoice_items WHERE item_type='Product' GROUP BY item_name ORDER BY total DESC LIMIT 5");
+$daily = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue FROM reservations r LEFT JOIN invoices i ON r.id = i.reservation_id WHERE r.created_at >= CURDATE() AND " . active_villa_where('r')));
+$monthly_res = mysqli_query($conn, "SELECT DATE_FORMAT(r.created_at, '%Y-%m') as month, COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue FROM reservations r LEFT JOIN invoices i ON r.id = i.reservation_id WHERE " . active_villa_where('r') . " GROUP BY month ORDER BY month DESC LIMIT 6");
+$occupancy = mysqli_query($conn, "SELECT rm.room_number, t.type_name, rm.status FROM rooms rm JOIN room_types t ON rm.room_type_id = t.id WHERE " . active_villa_where('rm'));
+$top_customers = mysqli_query($conn, "SELECT c.full_name, COUNT(r.id) as bookings, COALESCE(SUM(i.grand_total),0) as spent FROM customers c LEFT JOIN reservations r ON c.id = r.customer_id AND " . active_villa_where('r') . " LEFT JOIN invoices i ON r.id = i.reservation_id GROUP BY c.id ORDER BY spent DESC LIMIT 5");
+$staff_report = mysqli_query($conn, "SELECT position, COUNT(*) as total, SUM(salary) as total_salary FROM staff WHERE " . active_villa_where_raw() . " GROUP BY position");
+$product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SUM(total) as total FROM invoice_items WHERE item_type='Product' AND " . active_villa_where_raw() . " GROUP BY item_name ORDER BY total DESC LIMIT 5");
 
 // Income vs Expense summary
 $finance = mysqli_fetch_assoc(mysqli_query($conn, "
     SELECT
         COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS total_income,
         COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS total_expense
-    FROM transactions
+    FROM transactions WHERE " . active_villa_where_raw() . "
 "));
 $finance_monthly = mysqli_query($conn, "
     SELECT
@@ -30,6 +30,7 @@ $finance_monthly = mysqli_query($conn, "
         COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS income,
         COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS expense
     FROM transactions
+    WHERE " . active_villa_where_raw() . "
     GROUP BY month ORDER BY month DESC LIMIT 6
 ");
 ?>

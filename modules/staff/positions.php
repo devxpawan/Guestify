@@ -16,11 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($name)) {
             $error = 'Position name is required.';
         } else {
-            $check = mysqli_query($conn, "SELECT id FROM staff_positions WHERE position_name='$name'");
+            $check = mysqli_query($conn, "SELECT id FROM staff_positions WHERE position_name='$name' AND " . active_villa_where_raw());
             if (mysqli_num_rows($check) > 0) {
                 $error = 'Position already exists.';
             } else {
-                mysqli_query($conn, "INSERT INTO staff_positions (position_name) VALUES ('$name')");
+                $villa_id = active_villa_id();
+                mysqli_query($conn, "INSERT INTO staff_positions (villa_id, position_name) VALUES ($villa_id, '$name')");
                 $position_id = mysqli_insert_id($conn);
                 $_SESSION['success'] = 'Position added successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);
@@ -31,23 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)$_POST['id'];
         $name = mysqli_real_escape_string($conn, trim($_POST['position_name']));
         if (!empty($name)) {
-            $old_position = mysqli_fetch_assoc(mysqli_query($conn, "SELECT position_name FROM staff_positions WHERE id=$id"));
-            mysqli_query($conn, "UPDATE staff_positions SET position_name='$name' WHERE id=$id");
+            $old_position = mysqli_fetch_assoc(mysqli_query($conn, "SELECT position_name FROM staff_positions WHERE id=$id AND " . active_villa_where_raw()));
+            mysqli_query($conn, "UPDATE staff_positions SET position_name='$name' WHERE id=$id AND " . active_villa_where_raw());
             $_SESSION['success'] = 'Position updated!';
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
     } elseif (isset($_POST['delete'])) {
         $id = (int)$_POST['id'];
-        $deleted_position = mysqli_fetch_assoc(mysqli_query($conn, "SELECT position_name FROM staff_positions WHERE id=$id"));
-        mysqli_query($conn, "DELETE FROM staff_positions WHERE id=$id");
+        $deleted_position = mysqli_fetch_assoc(mysqli_query($conn, "SELECT position_name FROM staff_positions WHERE id=$id AND " . active_villa_where_raw()));
+        mysqli_query($conn, "DELETE FROM staff_positions WHERE id=$id AND " . active_villa_where_raw());
         $_SESSION['success'] = 'Position deleted!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();
     }
 }
 
-$positions = mysqli_query($conn, "SELECT * FROM staff_positions ORDER BY position_name");
+$positions = mysqli_query($conn, "SELECT * FROM staff_positions WHERE " . active_villa_where_raw() . " ORDER BY position_name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

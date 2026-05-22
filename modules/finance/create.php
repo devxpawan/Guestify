@@ -11,7 +11,7 @@ if (!has_role(['Admin', 'Manager', 'Cashier'])) {
 $error = '';
 $success = '';
 
-$categories = mysqli_query($conn, "SELECT * FROM finance_categories ORDER BY type, name");
+$categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . active_villa_where_raw() . " ORDER BY type, name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = mysqli_real_escape_string($conn, $_POST['type']);
@@ -26,8 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($transaction_date)) {
         $error = 'Please select a date.';
     } else {
-        $query = "INSERT INTO transactions (type, category_id, amount, description, transaction_date, created_by)
-                  VALUES ('$type', $category_id, $amount, '$description', '$transaction_date', $user_id)";
+        $villa_id = (int)active_villa_id();
+        $query = "INSERT INTO transactions (villa_id, type, category_id, amount, description, transaction_date, created_by)
+                  VALUES ($villa_id, '$type', $category_id, $amount, '$description', '$transaction_date', $user_id)";
         if (mysqli_query($conn, $query)) {
             $transaction_id = mysqli_insert_id($conn);
             logAudit('CREATE', 'finance', $transaction_id, "$type transaction of $amount added");

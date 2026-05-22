@@ -21,6 +21,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
     } else {
         mysqli_query($conn, "INSERT INTO users (username, password, role_id) VALUES ('$username', '$password', $role_id)");
         $new_user_id = mysqli_insert_id($conn);
+
+        // Assign user to selected villas
+        if (isset($_POST['villas']) && is_array($_POST['villas'])) {
+            $is_default = true;
+            foreach ($_POST['villas'] as $villa_id) {
+                $villa_id = (int)$villa_id;
+                $default_val = $is_default ? 1 : 0;
+                mysqli_query($conn, "INSERT INTO user_villas (user_id, villa_id, is_default) VALUES ($new_user_id, $villa_id, $default_val)");
+                $is_default = false;
+            }
+        }
+
         logAudit('CREATE', 'users', $new_user_id, "User $username created with role ID $role_id");
         $_SESSION['success'] = 'User created successfully!';
         header('Location: users.php');
@@ -29,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
 }
 
 $roles = mysqli_query($conn, "SELECT * FROM user_roles");
+$villas_list = mysqli_query($conn, "SELECT * FROM villas WHERE status='Active' ORDER BY name");
 
 include '../includes/header.php';
 include '../includes/sidebar.php';
@@ -68,6 +81,19 @@ include '../includes/sidebar.php';
                         <option value="<?= $r['id'] ?>"><?= $r['role_name'] ?></option>
                         <?php endwhile; ?>
                     </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Assign Villas</label>
+                    <div class="row">
+                        <?php while ($v = mysqli_fetch_assoc($villas_list)): ?>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="villas[]" value="<?= $v['id'] ?>" class="form-check-input" id="villa_<?= $v['id'] ?>" <?= $v['id'] == active_villa_id() ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="villa_<?= $v['id'] ?>"><?= htmlspecialchars($v['name']) ?></label>
+                            </div>
+                        </div>
+                        <?php endwhile; ?>
+                    </div>
                 </div>
                 <div class="col-12">
                     <button type="submit" name="add_user" class="btn btn-primary"><i class="fas fa-check"></i> Create User</button>

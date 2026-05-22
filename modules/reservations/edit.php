@@ -9,7 +9,8 @@ if (!has_role(['Admin', 'Receptionist'])) {
 }
 
 $id = (int)$_GET['id'];
-$res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
+$villa_id = active_villa_id();
+$res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id AND " . active_villa_where('r')));
 if (!$res || $res['status'] !== 'Pending') {
     header('Location: index.php');
     exit();
@@ -42,13 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $overlap = mysqli_query($conn, "SELECT id FROM reservations 
                                         WHERE room_id=$room_id 
                                         AND id != $id 
+                                        AND villa_id = $villa_id
                                         AND status NOT IN ('Cancelled','Checked-Out') 
                                         AND (check_in < '$check_out' AND check_out > '$check_in')");
         if (mysqli_num_rows($overlap) > 0) {
             $error = 'Room is not available for the selected time slot!';
         } else {
             $query = "UPDATE reservations SET customer_id=$customer_id, room_id=$room_id, booking_type='$booking_type', check_in='$check_in', 
-                      check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id";
+                      check_out='$check_out', adults=$adults, children=$children, status='$status' WHERE id=$id AND " . active_villa_where('r');
             if (mysqli_query($conn, $query)) {
                 
                 $old_reservation_data = [

@@ -4,17 +4,18 @@ require_once 'config/database.php';
 include 'includes/header.php';
 include 'includes/sidebar.php';
 
-$room_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM rooms"))[0];
-$reservation_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations"))[0];
-$customer_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM customers"))[0];
-$revenue = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(grand_total),0) FROM invoices"))[0];
-$pending = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE status='Pending'"))[0];
-$checked_in = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE status='Checked-In'"))[0];
+$room_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM rooms WHERE " . active_villa_where_raw()))[0];
+$reservation_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE " . active_villa_where_raw()))[0];
+$customer_count = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM customers WHERE " . active_villa_where_raw()))[0];
+$revenue = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(grand_total),0) FROM invoices WHERE " . active_villa_where_raw()))[0];
+$pending = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE status='Pending' AND " . active_villa_where_raw()))[0];
+$checked_in = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE status='Checked-In' AND " . active_villa_where_raw()))[0];
 
 $recent = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check_in, r.check_out, r.status 
                                FROM reservations r 
                                JOIN customers c ON r.customer_id = c.id 
                                JOIN rooms rm ON r.room_id = rm.id 
+                               WHERE " . active_villa_where('r') . "
                                ORDER BY r.id DESC LIMIT 5");
 
 $today = date('Y-m-d');
@@ -22,14 +23,14 @@ $arrivals = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.che
                                  FROM reservations r 
                                  JOIN customers c ON r.customer_id = c.id 
                                  JOIN rooms rm ON r.room_id = rm.id 
-                                 WHERE DATE(r.check_in) = '$today' AND r.status IN ('Pending', 'Confirmed') 
+                                 WHERE DATE(r.check_in) = '$today' AND r.status IN ('Pending', 'Confirmed') AND " . active_villa_where('r') . "
                                  ORDER BY r.check_in ASC");
 
 $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check_in, r.check_out, r.status 
                                    FROM reservations r 
                                    JOIN customers c ON r.customer_id = c.id 
                                    JOIN rooms rm ON r.room_id = rm.id 
-                                   WHERE DATE(r.check_out) = '$today' AND r.status = 'Checked-In' 
+                                   WHERE DATE(r.check_out) = '$today' AND r.status = 'Checked-In' AND " . active_villa_where('r') . "
                                    ORDER BY r.check_out ASC");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
@@ -294,7 +295,7 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
 </div>
 
 <?php
-$chart_query = mysqli_query($conn, "SELECT DATE_FORMAT(created_at, '%b %Y') as month, SUM(grand_total) as total FROM invoices GROUP BY month ORDER BY created_at ASC LIMIT 6");
+$chart_query = mysqli_query($conn, "SELECT DATE_FORMAT(created_at, '%b %Y') as month, SUM(grand_total) as total FROM invoices WHERE " . active_villa_where_raw() . " GROUP BY month ORDER BY created_at ASC LIMIT 6");
 $months = [];
 $totals = [];
 while($row = mysqli_fetch_assoc($chart_query)) {

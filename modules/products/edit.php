@@ -4,8 +4,8 @@ require_once '../../config/database.php';
 require_once '../../includes/audit.php';
 
 $id = (int)$_GET['id'];
-$product = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$id"));
-$categories_query = mysqli_query($conn, "SELECT * FROM product_categories ORDER BY category_name");
+$product = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$id AND " . active_villa_where_raw()));
+$categories_query = mysqli_query($conn, "SELECT * FROM product_categories WHERE " . active_villa_where_raw() . " ORDER BY category_name");
 if (!$product) {
     header('Location: index.php');
     exit();
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantity = (int)$_POST['quantity'];
     $price = (float)$_POST['price'];
 
-    $query = "UPDATE products SET product_name='$product_name', category='$category', quantity=$quantity, price=$price WHERE id=$id";
+    $query = "UPDATE products SET product_name='$product_name', category='$category', quantity=$quantity, price=$price WHERE id=$id AND " . active_villa_where_raw();
     if (mysqli_query($conn, $query)) {
         $old_product_data = [
             'product_name' => $product['product_name'],

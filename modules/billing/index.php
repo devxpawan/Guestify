@@ -21,6 +21,7 @@ if ($search !== '') {
 if ($status !== '') {
     $where[] = "i.payment_status = '$status'";
 }
+$where[] = active_villa_where('i');
 $where_clause = count($where) > 0 ? " WHERE " . implode(" AND ", $where) : "";
 
 // Pagination

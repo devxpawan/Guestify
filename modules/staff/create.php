@@ -11,7 +11,7 @@ if (!has_role(['Admin', 'Manager'])) {
 $error = '';
 $success = '';
 
-$positions_query = mysqli_query($conn, "SELECT * FROM staff_positions ORDER BY position_name");
+$positions_query = mysqli_query($conn, "SELECT * FROM staff_positions WHERE " . active_villa_where_raw() . " ORDER BY position_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = mysqli_real_escape_string($conn, $_POST['name']);
@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $salary = !empty($_POST['salary']) ? (float)$_POST['salary'] : 0;
 
-    $query = "INSERT INTO staff (name, position, phone, nic, email, salary) VALUES ('$name', '$position', '$phone', '$nic', '$email', $salary)";
+    $villa_id = active_villa_id();
+    $query = "INSERT INTO staff (villa_id, name, position, phone, nic, email, salary) VALUES ($villa_id, '$name', '$position', '$phone', '$nic', '$email', $salary)";
     if (mysqli_query($conn, $query)) {
         $staff_id = mysqli_insert_id($conn);
         logAudit('CREATE', 'staff', $staff_id, "Staff member $name added");

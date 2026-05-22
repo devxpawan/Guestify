@@ -15,7 +15,7 @@ $order = mysqli_fetch_assoc(mysqli_query($conn, "
     JOIN customers c ON r.customer_id = c.id
     JOIN rooms rm ON r.room_id = rm.id
     JOIN products p ON so.product_id = p.id
-    WHERE so.id = $id
+    WHERE so.id = $id AND " . active_villa_where('so') . "
 "));
 
 if (!$order) {
@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'cancel') {
         // Restore stock
-        mysqli_query($conn, "UPDATE products SET quantity = quantity + {$order['quantity']} WHERE id = {$order['product_id']}");
-        mysqli_query($conn, "UPDATE service_orders SET status = 'Cancelled' WHERE id = $id");
+        mysqli_query($conn, "UPDATE products SET quantity = quantity + {$order['quantity']} WHERE id = {$order['product_id']} AND " . active_villa_where_raw());
+        mysqli_query($conn, "UPDATE service_orders SET status = 'Cancelled' WHERE id = $id AND " . active_villa_where_raw());
         $_SESSION['success'] = 'Order cancelled. Stock restored.';
         header('Location: index.php');
         exit();
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($quantity <= 0) {
             $error = 'Quantity must be at least 1.';
         } else {
-            $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id"));
+            $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id AND " . active_villa_where_raw()));
             if (!$prod) {
                 $error = 'Invalid product.';
             } else {
@@ -59,11 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     // Adjust stock
                     if ($diff != 0) {
-                        mysqli_query($conn, "UPDATE products SET quantity = quantity - $diff WHERE id = $product_id");
+                        mysqli_query($conn, "UPDATE products SET quantity = quantity - $diff WHERE id = $product_id AND " . active_villa_where_raw());
                     }
 
                     $price = $prod['price'];
-                    mysqli_query($conn, "UPDATE service_orders SET product_id=$product_id, quantity=$quantity, price=$price, status='$status' WHERE id=$id");
+                    mysqli_query($conn, "UPDATE service_orders SET product_id=$product_id, quantity=$quantity, price=$price, status='$status' WHERE id=$id AND " . active_villa_where_raw());
                     $_SESSION['success'] = 'Order updated successfully!';
                     header('Location: index.php');
                     exit();
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$products = mysqli_query($conn, "SELECT * FROM products WHERE is_active = 1 ORDER BY product_name");
+$products = mysqli_query($conn, "SELECT * FROM products WHERE is_active = 1 AND " . active_villa_where_raw() . " ORDER BY product_name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

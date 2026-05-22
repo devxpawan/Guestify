@@ -16,16 +16,18 @@ $reservations = mysqli_query($conn, "SELECT r.id, r.check_in, r.check_out, c.ful
                                      JOIN rooms rm ON r.room_id = rm.id 
                                      WHERE r.status IN ('Checked-In','Checked-Out') 
                                      AND r.id NOT IN (SELECT reservation_id FROM invoices)
+                                     AND " . active_villa_where('r') . "
                                      ORDER BY r.id DESC");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reservation_id = (int)$_POST['reservation_id'];
     $discount = (float)$_POST['discount'];
 
-    $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT r.*, rm.price, rm.price_day, rm.price_night, rm.price_short FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE r.id=$reservation_id"));
+    $res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT r.*, rm.price, rm.price_day, rm.price_night, rm.price_short FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE r.id=$reservation_id AND " . active_villa_where('r')));
     if (!$res) {
         $error = 'Invalid reservation.';
     } else {
+        $villa_id = active_villa_id();
         $price = $res['price_night'];
         if ($res['booking_type'] === 'Day Time') {
             $price = $res['price_day'];
@@ -56,12 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $grand_total = $room_charges + $product_charges - $discount;
 
-        $query = "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status) 
-                  VALUES ($reservation_id, $room_charges, $product_charges, $discount, $grand_total, 'Unpaid')";
+        $query = "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status, villa_id) 
+                  VALUES ($reservation_id, $room_charges, $product_charges, $discount, $grand_total, 'Unpaid', $villa_id)";
         if (mysqli_query($conn, $query)) {
             $invoice_id = mysqli_insert_id($conn);
 
-            mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Room', 'Room Charges ({$res['check_in']} to {$res['check_out']})', $days, $price, $room_charges)");
+            mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total, villa_id) VALUES ($invoice_id, 'Room', 'Room Charges ({$res['check_in']} to {$res['check_out']})', $days, $price, $room_charges, $villa_id)");
             $invoice_item_id = mysqli_insert_id($conn);
 
             if (isset($_POST['products'])) {
@@ -69,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($qty > 0) {
                         $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$pid"));
                         $total = $qty * $prod['price'];
-                        mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Product', '{$prod['product_name']}', $qty, {$prod['price']}, $total)");
+                        mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total, villa_id) VALUES ($invoice_id, 'Product', '{$prod['product_name']}', $qty, {$prod['price']}, $total, $villa_id)");
                         $invoice_item_id = mysqli_insert_id($conn);
                         
                         $old_product_quantity = $prod['quantity'];
@@ -83,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $service_orders = mysqli_query($conn, "SELECT so.*, p.product_name FROM service_orders so JOIN products p ON so.product_id = p.id WHERE so.reservation_id = $reservation_id AND so.status != 'Cancelled'");
             while ($so = mysqli_fetch_assoc($service_orders)) {
                 $total = $so['quantity'] * $so['price'];
-                mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total) VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total)");
+                mysqli_query($conn, "INSERT INTO invoice_items (invoice_id, item_type, item_name, quantity, price, total, villa_id) VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total, $villa_id)");
                 $invoice_item_id = mysqli_insert_id($conn);
             }
 

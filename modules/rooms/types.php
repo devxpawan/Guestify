@@ -2,6 +2,8 @@
 require_once "../../includes/session.php";
 require_once "../../config/database.php";
 
+$villa_id = (int)active_villa_id();
+
 if (!has_role(['Admin'])) {
     header('Location: index.php');
     exit();
@@ -14,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_type'])) {
         $type_name = mysqli_real_escape_string($conn, $_POST['type_name']);
         if (!empty($type_name)) {
-            $query = "INSERT INTO room_types (type_name) VALUES ('$type_name')";
+            $query = "INSERT INTO room_types (type_name, villa_id) VALUES ('$type_name', $villa_id)";
             if (mysqli_query($conn, $query)) {
                 $type_id = mysqli_insert_id($conn);
                 $_SESSION['success'] = "Room type added successfully!";
@@ -26,12 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif (isset($_POST['delete_type'])) {
         $id = (int)$_POST['id'];
-        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_type_id=$id");
+        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_type_id=$id AND villa_id=$villa_id");
         if (mysqli_num_rows($check) > 0) {
             $error = "Cannot delete: This type is being used by rooms.";
         } else {
-            $deleted_type = mysqli_fetch_assoc(mysqli_query($conn, "SELECT type_name FROM room_types WHERE id=$id"));
-            mysqli_query($conn, "DELETE FROM room_types WHERE id=$id");
+            $deleted_type = mysqli_fetch_assoc(mysqli_query($conn, "SELECT type_name FROM room_types WHERE id=$id AND villa_id=$villa_id"));
+            mysqli_query($conn, "DELETE FROM room_types WHERE id=$id AND villa_id=$villa_id");
             $_SESSION['success'] = "Room type deleted.";
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
@@ -39,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$types = mysqli_query($conn, "SELECT rt.*, COUNT(r.id) as total_rooms, SUM(CASE WHEN r.status = 'Available' THEN 1 ELSE 0 END) as available_rooms FROM room_types rt LEFT JOIN rooms r ON rt.id = r.room_type_id GROUP BY rt.id ORDER BY rt.id");
+$types = mysqli_query($conn, "SELECT rt.*, COUNT(r.id) as total_rooms, SUM(CASE WHEN r.status = 'Available' THEN 1 ELSE 0 END) as available_rooms FROM room_types rt LEFT JOIN rooms r ON rt.id = r.room_type_id AND r.villa_id=$villa_id WHERE rt.villa_id=$villa_id GROUP BY rt.id ORDER BY rt.id");
 
 include "../../includes/header.php";
 include "../../includes/sidebar.php";

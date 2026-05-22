@@ -9,6 +9,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['
 $status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
 
 $where = [];
+$where[] = active_villa_where('r');
 if ($search !== '') {
     $where[] = "(c.full_name LIKE '%$search%' OR r.id = '" . (int)$search . "')";
 }

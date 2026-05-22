@@ -16,11 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($name)) {
             $error = 'Category name is required.';
         } else {
-            $check = mysqli_query($conn, "SELECT id FROM product_categories WHERE category_name='$name'");
+            $check = mysqli_query($conn, "SELECT id FROM product_categories WHERE category_name='$name' AND " . active_villa_where_raw());
             if (mysqli_num_rows($check) > 0) {
                 $error = 'Category already exists.';
             } else {
-                mysqli_query($conn, "INSERT INTO product_categories (category_name) VALUES ('$name')");
+                $villa_id = (int)active_villa_id();
+                mysqli_query($conn, "INSERT INTO product_categories (category_name, villa_id) VALUES ('$name', $villa_id)");
                 $_SESSION['success'] = 'Category added successfully!';
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
@@ -30,21 +31,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)$_POST['id'];
         $name = mysqli_real_escape_string($conn, trim($_POST['category_name']));
         if (!empty($name)) {
-            mysqli_query($conn, "UPDATE product_categories SET category_name='$name' WHERE id=$id");
+            mysqli_query($conn, "UPDATE product_categories SET category_name='$name' WHERE id=$id AND " . active_villa_where_raw());
             $_SESSION['success'] = 'Category updated!';
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
     } elseif (isset($_POST['delete'])) {
         $id = (int)$_POST['id'];
-        mysqli_query($conn, "DELETE FROM product_categories WHERE id=$id");
+        mysqli_query($conn, "DELETE FROM product_categories WHERE id=$id AND " . active_villa_where_raw());
         $_SESSION['success'] = 'Category deleted!';
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit();
     }
 }
 
-$categories = mysqli_query($conn, "SELECT * FROM product_categories ORDER BY category_name");
+$categories = mysqli_query($conn, "SELECT * FROM product_categories WHERE " . active_villa_where_raw() . " ORDER BY category_name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

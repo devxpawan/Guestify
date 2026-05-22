@@ -6,7 +6,7 @@ require_once '../../includes/audit.php';
 $error = '';
 $success = '';
 
-$categories_query = mysqli_query($conn, "SELECT * FROM product_categories ORDER BY category_name");
+$categories_query = mysqli_query($conn, "SELECT * FROM product_categories WHERE " . active_villa_where_raw() . " ORDER BY category_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_name = mysqli_real_escape_string($conn, $_POST['product_name']);
@@ -14,7 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantity = (int)$_POST['quantity'];
     $price = (float)$_POST['price'];
 
-    $query = "INSERT INTO products (product_name, category, quantity, price) VALUES ('$product_name', '$category', $quantity, $price)";
+    $villa_id = (int)active_villa_id();
+    $query = "INSERT INTO products (product_name, category, quantity, price, villa_id) VALUES ('$product_name', '$category', $quantity, $price, $villa_id)";
     if (mysqli_query($conn, $query)) {
         $product_id = mysqli_insert_id($conn);
         logAudit('CREATE', 'products', $product_id, "Product $product_name added");

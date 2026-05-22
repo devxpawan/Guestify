@@ -22,6 +22,7 @@ $summary = mysqli_fetch_assoc(mysqli_query($conn, "
         COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS total_income,
         COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS total_expense
     FROM transactions
+    WHERE " . active_villa_where_raw() . "
 "));
 
 $profit = $summary['total_income'] - $summary['total_expense'];
@@ -32,12 +33,13 @@ $month_summary = mysqli_fetch_assoc(mysqli_query($conn, "
         COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS income,
         COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS expense
     FROM transactions
-    WHERE MONTH(transaction_date) = MONTH(CURRENT_DATE())
+    WHERE " . active_villa_where_raw() . "
+    AND MONTH(transaction_date) = MONTH(CURRENT_DATE())
     AND YEAR(transaction_date) = YEAR(CURRENT_DATE())
 "));
 
 // Where for list
-$where = [];
+$where = [active_villa_where('t')];
 if ($type_filter !== '') {
     $where[] = "t.type = '$type_filter'";
 }
@@ -71,7 +73,7 @@ $transactions = mysqli_query($conn, "
     LIMIT $offset, $per_page
 ");
 
-$categories = mysqli_query($conn, "SELECT * FROM finance_categories ORDER BY type, name");
+$categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . active_villa_where_raw() . " ORDER BY type, name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">

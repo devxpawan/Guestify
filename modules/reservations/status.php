@@ -17,14 +17,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $id = (int)$_POST['id'];
 $new_status = mysqli_real_escape_string($conn, $_POST['status']);
+$villa_id = active_villa_id();
 
-$res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id"));
+$res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM reservations WHERE id=$id AND villa_id = $villa_id"));
 if ($res) {
     $old_status = $res['status'];
     // Update reservation status
-    mysqli_query($conn, "UPDATE reservations SET status='$new_status' WHERE id=$id");
+    mysqli_query($conn, "UPDATE reservations SET status='$new_status' WHERE id=$id AND villa_id = $villa_id");
     
-    logAudit('UPDATE', 'reservations', $id, "Reservation status changed from $old_status to $new_status", ['status' => $old_status], ['status' => $new_status]);
+    logAudit('UPDATE', 'reservations', $id, "Reservation status changed from $old_status to $new_status", ['status' => $old_status], ['status' => $new_status], $villa_id);
 
     // Update room status accordingly
     if ($new_status == 'Checked-In') {

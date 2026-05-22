@@ -10,12 +10,13 @@ $success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $villa_id = active_villa_id();
     $company_name = mysqli_real_escape_string($conn, $_POST['company_name']);
     $company_email = mysqli_real_escape_string($conn, $_POST['company_email']);
     $currency_symbol = mysqli_real_escape_string($conn, $_POST['currency_symbol']);
     $currency_symbol = preg_replace('/\s+/', '', $currency_symbol);
 
-    $update_query = "UPDATE settings SET company_name = '$company_name', company_email = '$company_email', currency_symbol = '$currency_symbol'";
+    $update_query = "UPDATE villas SET company_name = '$company_name', company_email = '$company_email', currency_symbol = '$currency_symbol'";
     
     // Ensure root uploads folder exists
     if (!is_dir('../../uploads')) {
@@ -48,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    $update_query .= " WHERE id = $villa_id";
+
     if (empty($error)) {
         if (mysqli_query($conn, $update_query)) {
             $_SESSION['success'] = "Branding settings updated successfully! Please refresh to see all changes.";
@@ -59,8 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$branding_query = mysqli_query($conn, "SELECT * FROM settings LIMIT 1");
-$branding = mysqli_fetch_assoc($branding_query);
+$branding = get_villa_branding();
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

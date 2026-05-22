@@ -23,6 +23,7 @@ if (strtotime($check_out) <= strtotime($check_in)) {
 $exclude_res_id = isset($_GET['exclude_res_id']) ? (int)$_GET['exclude_res_id'] : 0;
 $exclude_cond = $exclude_res_id > 0 ? "AND id != $exclude_res_id" : "";
 
+$villa_id = active_villa_id();
 $room_type_id = isset($_GET['room_type_id']) ? (int)$_GET['room_type_id'] : 0;
 $type_cond = $room_type_id > 0 ? "AND r.room_type_id = $room_type_id" : "";
 
@@ -37,11 +38,11 @@ if ($booking_type === 'Day Time') {
 $query = "SELECT r.id, r.room_number, t.type_name, $price_field AS price 
           FROM rooms r 
           JOIN room_types t ON r.room_type_id = t.id 
-          WHERE r.status != 'Maintenance' AND r.is_active = 1 
+          WHERE r.status != 'Maintenance' AND r.is_active = 1 AND r.villa_id = $villa_id
           $type_cond
           AND r.id NOT IN (
               SELECT DISTINCT room_id FROM reservations 
-              WHERE status NOT IN ('Cancelled', 'Checked-Out') 
+              WHERE status NOT IN ('Cancelled', 'Checked-Out') AND villa_id = $villa_id
               $exclude_cond 
               AND (
                   (check_in < '$check_out' AND check_out > '$check_in')

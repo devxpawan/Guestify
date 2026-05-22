@@ -4,7 +4,7 @@ require_once '../../config/database.php';
 require_once '../../includes/audit.php';
 
 $id = (int)$_GET['id'];
-$customer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM customers WHERE id=$id"));
+$customer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM customers WHERE id=$id AND " . active_villa_where()));
 if (!$customer) {
     header('Location: index.php');
     exit();
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
 
-    $query = "UPDATE customers SET full_name='$full_name', nic_passport='$nic_passport', phone='$phone', email='$email', address='$address' WHERE id=$id";
+    $query = "UPDATE customers SET full_name='$full_name', nic_passport='$nic_passport', phone='$phone', email='$email', address='$address' WHERE id=$id AND " . active_villa_where();
     if (mysqli_query($conn, $query)) {
         $old_customer_data = [
             'full_name' => $customer['full_name'],

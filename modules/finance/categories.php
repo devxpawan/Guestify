@@ -18,11 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($name === '') {
             $error = 'Category name is required.';
         } else {
-            $check = mysqli_query($conn, "SELECT id FROM finance_categories WHERE name='$name' AND type='$type'");
+            $check = mysqli_query($conn, "SELECT id FROM finance_categories WHERE name='$name' AND type='$type' AND " . active_villa_where_raw());
             if (mysqli_num_rows($check) > 0) {
                 $error = 'Category already exists.';
             } else {
-                mysqli_query($conn, "INSERT INTO finance_categories (name, type) VALUES ('$name', '$type')");
+                $villa_id = (int)active_villa_id();
+                mysqli_query($conn, "INSERT INTO finance_categories (name, type, villa_id) VALUES ('$name', '$type', $villa_id)");
                 $_SESSION['success'] = 'Category added successfully!';
                 header("Location: " . $_SERVER['PHP_SELF']);
                 exit();
@@ -33,19 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = mysqli_real_escape_string($conn, trim($_POST['name']));
         $type = mysqli_real_escape_string($conn, $_POST['type']);
         if ($name !== '') {
-            mysqli_query($conn, "UPDATE finance_categories SET name='$name', type='$type' WHERE id=$id");
+            mysqli_query($conn, "UPDATE finance_categories SET name='$name', type='$type' WHERE id=$id AND " . active_villa_where_raw());
             $_SESSION['success'] = 'Category updated successfully!';
             header("Location: " . $_SERVER['PHP_SELF']);
             exit();
         }
     } elseif (isset($_POST['delete_category'])) {
         $id = (int)$_POST['id'];
-        $check = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM transactions WHERE category_id=$id");
+        $check = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM transactions WHERE category_id=$id AND " . active_villa_where_raw());
         $used = mysqli_fetch_assoc($check)['cnt'];
         if ($used > 0) {
             $error = 'Cannot delete: category has ' . $used . ' transaction(s) linked.';
         } else {
-            mysqli_query($conn, "DELETE FROM finance_categories WHERE id=$id");
+            mysqli_query($conn, "DELETE FROM finance_categories WHERE id=$id AND " . active_villa_where_raw());
             $_SESSION['success'] = 'Category deleted successfully!';
             header("Location: " . $_SERVER['PHP_SELF']);
             exit();
@@ -53,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categories = mysqli_query($conn, "SELECT * FROM finance_categories ORDER BY type, name");
+$categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . active_villa_where_raw() . " ORDER BY type, name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

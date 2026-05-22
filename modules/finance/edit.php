@@ -9,7 +9,7 @@ if (!has_role(['Admin', 'Manager', 'Cashier'])) {
 }
 
 $id = (int)$_GET['id'];
-$transaction = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM transactions WHERE id=$id"));
+$transaction = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM transactions WHERE id=$id AND " . active_villa_where_raw()));
 if (!$transaction) {
     header('Location: index.php');
     exit();
@@ -18,7 +18,7 @@ if (!$transaction) {
 $error = '';
 $success = '';
 
-$categories = mysqli_query($conn, "SELECT * FROM finance_categories ORDER BY type, name");
+$categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . active_villa_where_raw() . " ORDER BY type, name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = mysqli_real_escape_string($conn, $_POST['type']);
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($transaction_date)) {
         $error = 'Please select a date.';
     } else {
-        $query = "UPDATE transactions SET type='$type', category_id=$category_id, amount=$amount, description='$description', transaction_date='$transaction_date' WHERE id=$id";
+        $query = "UPDATE transactions SET type='$type', category_id=$category_id, amount=$amount, description='$description', transaction_date='$transaction_date' WHERE id=$id AND " . active_villa_where_raw();
         if (mysqli_query($conn, $query)) {
             $old_transaction_data = [
                 'type' => $transaction['type'],

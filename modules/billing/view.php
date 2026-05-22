@@ -13,14 +13,14 @@ $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
                                                    JOIN rooms rm ON r.room_id = rm.id 
-                                                   WHERE i.id=$id"));
+                                                   WHERE i.id=$id AND " . active_villa_where('i')));
 if (!$invoice) {
     header('Location: index.php');
     exit();
 }
 
-$items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id");
-$payments = mysqli_query($conn, "SELECT * FROM payments WHERE invoice_id=$id");
+$items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id AND " . active_villa_where());
+$payments = mysqli_query($conn, "SELECT * FROM payments WHERE invoice_id=$id AND " . active_villa_where());
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

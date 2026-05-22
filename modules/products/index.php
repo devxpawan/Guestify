@@ -10,10 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
         exit();
     }
     $id = (int)$_POST['id'];
-    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM products WHERE id=$id"));
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM products WHERE id=$id AND " . active_villa_where_raw()));
     if ($item) {
         $new_status = $item['is_active'] ? 0 : 1;
-        mysqli_query($conn, "UPDATE products SET is_active=$new_status WHERE id=$id");
+        mysqli_query($conn, "UPDATE products SET is_active=$new_status WHERE id=$id AND " . active_villa_where_raw());
         $_SESSION['success'] = 'Product status updated successfully!';
     }
     header("Location: " . $_SERVER['REQUEST_URI']);
@@ -27,7 +27,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['
 $category = isset($_GET['category']) ? mysqli_real_escape_string($conn, $_GET['category']) : '';
 $is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
 
-$where = [];
+$where = [active_villa_where_raw()];
 if ($search !== '') {
     $where[] = "product_name LIKE '%$search%'";
 }
@@ -49,7 +49,7 @@ $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
 $products = mysqli_query($conn, "SELECT * FROM products $where_clause ORDER BY id DESC LIMIT $offset, $per_page");
-$categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM product_categories ORDER BY category_name");
+$categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM product_categories WHERE " . active_villa_where_raw() . " ORDER BY category_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">

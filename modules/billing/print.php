@@ -2,8 +2,7 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 
-$branding_query = mysqli_query($conn, "SELECT currency_symbol FROM settings LIMIT 1");
-$branding = mysqli_fetch_assoc($branding_query);
+$branding = get_villa_branding();
 $global_currency = $branding['currency_symbol'] ?? '$';
 
 
@@ -13,13 +12,13 @@ $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
                                                    JOIN rooms rm ON r.room_id = rm.id 
-                                                   WHERE i.id=$id"));
+                                                   WHERE i.id=$id AND " . active_villa_where('i')));
 if (!$invoice) {
     header('Location: index.php');
     exit();
 }
 
-$items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id");
+$items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id AND " . active_villa_where());
 ?>
 <!DOCTYPE html>
 <html>

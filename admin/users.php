@@ -55,6 +55,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         mysqli_query($conn, $sql . " WHERE id=$uid");
         
+        // Sync villa assignments
+        $submitted_villas = isset($_POST['villas']) ? array_map('intval', $_POST['villas']) : [];
+        if (count($submitted_villas) > 0) {
+            mysqli_query($conn, "DELETE FROM user_villas WHERE user_id = $uid");
+            $first = true;
+            foreach ($submitted_villas as $v_id) {
+                $default_val = $first ? 1 : 0;
+                mysqli_query($conn, "INSERT INTO user_villas (user_id, villa_id, is_default) VALUES ($uid, $v_id, $default_val)");
+                $first = false;
+            }
+        }
+
         $new_user_data = ['username' => $username, 'role_id' => $role_id];
         logAudit('UPDATE', 'users', $uid, "User $username updated", $old_user, $new_user_data);
         $_SESSION['success'] = 'User details updated successfully!';
@@ -89,8 +101,18 @@ $count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM users u $where_c
 $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
-$users = mysqli_query($conn, "SELECT u.*, r.role_name FROM users u JOIN user_roles r ON u.role_id = r.id $where_clause ORDER BY u.id LIMIT $offset, $per_page");
+$users = mysqli_query($conn, "SELECT u.*, r.role_name,
+    (SELECT GROUP_CONCAT(v.name SEPARATOR ', ') FROM user_villas uv JOIN villas v ON uv.villa_id = v.id WHERE uv.user_id = u.id) AS villa_names
+    FROM users u JOIN user_roles r ON u.role_id = r.id $where_clause ORDER BY u.id LIMIT $offset, $per_page");
 $roles = mysqli_query($conn, "SELECT * FROM user_roles");
+$all_villas = mysqli_query($conn, "SELECT * FROM villas WHERE status='Active' ORDER BY name");
+
+// Pre-fetch user villa assignments
+$user_villa_map = [];
+$uvq = mysqli_query($conn, "SELECT user_id, villa_id FROM user_villas");
+while ($uv = mysqli_fetch_assoc($uvq)) {
+    $user_villa_map[$uv['user_id']][] = $uv['villa_id'];
+}
 
 include '../includes/header.php';
 include '../includes/sidebar.php';
@@ -103,6 +125,27 @@ include '../includes/sidebar.php';
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Manage system users and access controls</p>
             </div>
             <a href="create.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add User</a>
+        </div>
+    </div>
+
+    <?php
+    $current_villa_id = active_villa_id();
+    $villa_users = mysqli_query($conn, "
+        SELECT u.id, u.username, u.status
+        FROM users u
+        JOIN user_villas uv ON u.id = uv.user_id
+        WHERE uv.villa_id = $current_villa_id
+        ORDER BY u.username
+    ");
+    ?>
+    <div class="card mb-3 shadow-sm border-primary">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <i class="bi bi-building text-primary"></i>
+                <strong class="text-primary me-2">Current Villa Users:</strong>
+                <?php $villa_user_list = []; while ($vu = mysqli_fetch_assoc($villa_users)) { $villa_user_list[] = '<span class="badge ' . ($vu['status'] ? 'bg-primary' : 'bg-secondary') . '">' . htmlspecialchars($vu['username']) . '</span>'; } ?>
+                <?= $villa_user_list ? implode(' ', $villa_user_list) : '<span class="text-muted small">No users assigned</span>' ?>
+            </div>
         </div>
     </div>
 
@@ -146,7 +189,7 @@ include '../includes/sidebar.php';
         <div class="table-responsive">
             <table class="table">
                 <thead>
-                    <tr><th>ID</th><th>Username</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+                    <tr><th>ID</th><th>Username</th><th>Role</th><th>Villas</th><th>Status</th><th>Created</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                     <?php while ($u = mysqli_fetch_assoc($users)): ?>
@@ -158,6 +201,7 @@ include '../includes/sidebar.php';
                             </div>
                         </td>
                         <td><span class="badge badge-purple"><?= $u['role_name'] ?></span></td>
+                        <td><small class="text-muted"><?= htmlspecialchars($u['villa_names'] ?? 'None') ?></small></td>
                         <td>
                             <span class="badge badge-<?= $u['status'] ? 'success' : 'danger' ?>">
                                 <i class="bi bi-<?= $u['status'] ? 'check-circle' : 'x-circle' ?>"></i> <?= $u['status'] ? 'Active' : 'Inactive' ?>
@@ -171,7 +215,7 @@ include '../includes/sidebar.php';
                                     <i class="fas fa-<?= $u['status'] ? 'ban' : 'check' ?>"></i>
                                 </button>
                                 <?php endif; ?>
-                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>)" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEdit(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username']) ?>', <?= $u['role_id'] ?>, [<?= implode(',', $user_villa_map[$u['id']] ?? []) ?>])" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -210,6 +254,19 @@ include '../includes/sidebar.php';
                 <div class="mb-3">
                     <label class="form-label">New Password <small class="text-muted">(Leave blank to keep current)</small></label>
                     <input type="password" name="new_password" class="form-control" placeholder="Enter new password">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Assign Villas</label>
+                    <div class="row" id="edit_villas_container">
+                        <?php mysqli_data_seek($all_villas, 0); while ($v = mysqli_fetch_assoc($all_villas)): ?>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" name="villas[]" value="<?= $v['id'] ?>" class="form-check-input edit-villa-checkbox" id="edit_villa_<?= $v['id'] ?>">
+                                <label class="form-check-label" for="edit_villa_<?= $v['id'] ?>"><?= htmlspecialchars($v['name']) ?></label>
+                            </div>
+                        </div>
+                        <?php endwhile; ?>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -251,14 +308,18 @@ function showToggleConfirm(id, username, status) {
     new bootstrap.Modal(document.getElementById('toggleModal')).show();
 }
 
-function showEdit(id, username, roleId) {
+function showEdit(id, username, roleId, villaIds) {
     document.getElementById('edit_user_id').value = id;
     document.getElementById('edit_username').value = username;
     
     var roleSelect = document.getElementById('edit_role_id');
     roleSelect.value = roleId;
-    
     roleSelect.disabled = (id == <?= $_SESSION['user_id'] ?>);
+    
+    // Check assigned villa boxes
+    document.querySelectorAll('.edit-villa-checkbox').forEach(function(cb) {
+        cb.checked = villaIds.includes(parseInt(cb.value));
+    });
     
     new bootstrap.Modal(document.getElementById('editModal')).show();
 }

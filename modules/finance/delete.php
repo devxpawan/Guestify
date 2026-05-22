@@ -10,11 +10,11 @@ if (!has_role(['Admin', 'Manager', 'Cashier'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     $id = (int)$_POST['id'];
-    $transaction = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM transactions WHERE id=$id"));
+    $transaction = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM transactions WHERE id=$id AND " . active_villa_where_raw()));
     if ($transaction) {
         logAudit('DELETE', 'finance', $id, "{$transaction['type']} transaction of {$transaction['amount']} deleted", $transaction, null);
     }
-    mysqli_query($conn, "DELETE FROM transactions WHERE id=$id");
+    mysqli_query($conn, "DELETE FROM transactions WHERE id=$id AND " . active_villa_where_raw());
     $_SESSION['success'] = 'Transaction deleted successfully!';
 }
 

@@ -139,6 +139,10 @@
             <?php if (has_role(['Admin'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">System</div>
+                <a href="<?= $base_url ?>modules/villas/index.php" class="sidebar-link <?= is_active_link('/modules/villas/') ? 'active' : '' ?>" data-page="villas">
+                    <i class="bi bi-building-gear"></i>
+                    <span>Villas</span>
+                </a>
                 <a href="<?= $base_url ?>admin/users.php" class="sidebar-link <?= is_active_link(['/admin/users.php', '/admin/create.php']) ? 'active' : '' ?>" data-page="users">
                     <i class="bi bi-shield-lock"></i>
                     <span>Users & Roles</span>

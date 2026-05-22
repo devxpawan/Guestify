@@ -16,13 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         SELECT so.*, r.status AS reservation_status
         FROM service_orders so
         JOIN reservations r ON so.reservation_id = r.id
-        WHERE so.id = $id
+        WHERE so.id = $id AND " . active_villa_where('so') . "
     "));
 
     if ($order && $order['reservation_status'] === 'Checked-In') {
         if ($action === 'cancel') {
-            mysqli_query($conn, "UPDATE products SET quantity = quantity + {$order['quantity']} WHERE id = {$order['product_id']}");
-            mysqli_query($conn, "UPDATE service_orders SET status = 'Cancelled' WHERE id = $id");
+            mysqli_query($conn, "UPDATE products SET quantity = quantity + {$order['quantity']} WHERE id = {$order['product_id']} AND " . active_villa_where_raw());
+            mysqli_query($conn, "UPDATE service_orders SET status = 'Cancelled' WHERE id = $id AND " . active_villa_where_raw());
             $_SESSION['success'] = 'Order cancelled. Stock restored.';
         } elseif ($action === 'update') {
             $product_id = (int)$_POST['product_id'];
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $status = mysqli_real_escape_string($conn, $_POST['status']);
 
             if ($quantity > 0) {
-                $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id"));
+                $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM products WHERE id=$product_id AND " . active_villa_where_raw()));
                 if ($prod) {
                     $old_qty = $order['quantity'];
                     $diff = $quantity - $old_qty;
@@ -39,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['error'] = 'Insufficient stock! Only ' . $prod['quantity'] . ' available.';
                     } else {
                         if ($diff != 0) {
-                            mysqli_query($conn, "UPDATE products SET quantity = quantity - $diff WHERE id = $product_id");
+                            mysqli_query($conn, "UPDATE products SET quantity = quantity - $diff WHERE id = $product_id AND " . active_villa_where_raw());
                         }
                         $price = $prod['price'];
-                        mysqli_query($conn, "UPDATE service_orders SET product_id=$product_id, quantity=$quantity, price=$price, status='$status' WHERE id=$id");
+                        mysqli_query($conn, "UPDATE service_orders SET product_id=$product_id, quantity=$quantity, price=$price, status='$status' WHERE id=$id AND " . active_villa_where_raw());
                         $_SESSION['success'] = 'Order updated successfully!';
                     }
                 }
@@ -58,7 +58,7 @@ $active_stays = mysqli_query($conn, "SELECT r.id, r.room_id, r.check_in, c.full_
                                      FROM reservations r 
                                      JOIN customers c ON r.customer_id = c.id 
                                      JOIN rooms rm ON r.room_id = rm.id 
-                                     WHERE r.status = 'Checked-In' 
+                                     WHERE r.status = 'Checked-In' AND " . active_villa_where('r') . "
                                      ORDER BY rm.room_number");
 
 $recent_orders = mysqli_query($conn, "SELECT so.*, p.product_name, c.full_name, rm.room_number, r.status AS reservation_status
@@ -67,9 +67,10 @@ $recent_orders = mysqli_query($conn, "SELECT so.*, p.product_name, c.full_name, 
                                       JOIN customers c ON r.customer_id = c.id 
                                       JOIN rooms rm ON r.room_id = rm.id 
                                       JOIN products p ON so.product_id = p.id 
+                                      WHERE " . active_villa_where('so') . "
                                       ORDER BY so.created_at DESC LIMIT 20");
 
-$products = mysqli_query($conn, "SELECT * FROM products WHERE is_active = 1 ORDER BY product_name");
+$products = mysqli_query($conn, "SELECT * FROM products WHERE is_active = 1 AND " . active_villa_where_raw() . " ORDER BY product_name");
 
 include '../../includes/header.php';
 include '../../includes/sidebar.php';

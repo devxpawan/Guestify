@@ -13,8 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
 
-    $query = "INSERT INTO customers (full_name, nic_passport, phone, email, address) 
-              VALUES ('$full_name', '$nic_passport', '$phone', '$email', '$address')";
+    $villa_id = active_villa_id();
+    $query = "INSERT INTO customers (full_name, nic_passport, phone, email, address, villa_id) 
+              VALUES ('$full_name', '$nic_passport', '$phone', '$email', '$address', $villa_id)";
     if (mysqli_query($conn, $query)) {
         $customer_id = mysqli_insert_id($conn);
         logAudit('CREATE', 'customers', $customer_id, "Customer $full_name added");

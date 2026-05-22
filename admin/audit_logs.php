@@ -15,7 +15,7 @@ $filter_action = isset($_GET['action']) ? mysqli_real_escape_string($conn, $_GET
 $filter_user = isset($_GET['user']) ? mysqli_real_escape_string($conn, $_GET['user']) : '';
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 
-$where = [];
+$where = [active_villa_where_raw()];
 if ($date_from) {
     $where[] = "DATE(created_at) >= '$date_from'";
 }
@@ -45,7 +45,7 @@ $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
 $logs = mysqli_query($conn, "SELECT * FROM audit_logs $where_clause ORDER BY created_at DESC LIMIT $offset, $per_page");
-$users = mysqli_query($conn, "SELECT DISTINCT user_id, username FROM audit_logs ORDER BY username");
+$users = mysqli_query($conn, "SELECT DISTINCT user_id, username FROM audit_logs WHERE " . active_villa_where_raw() . " ORDER BY username");
 
 $modules = ['auth', 'reservations', 'rooms', 'customers', 'staff', 'finance', 'users', 'products', 'billing', 'room_service'];
 $actions = ['CREATE', 'UPDATE', 'DELETE'];

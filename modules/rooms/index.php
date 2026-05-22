@@ -3,6 +3,8 @@ require_once '../../includes/session.php';
 require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
 
+$vid = (int)active_villa_id();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     if (!has_role(['Admin'])) {
         $_SESSION['error'] = 'Permission denied.';
@@ -10,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
         exit();
     }
     $id = (int)$_POST['id'];
-    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM rooms WHERE id=$id"));
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM rooms WHERE id=$id AND villa_id=$vid"));
     if ($item) {
         $old_is_active = $item['is_active'];
         $new_is_active = $item['is_active'] ? 0 : 1;
@@ -30,6 +32,7 @@ $status = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['statu
 $is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
 
 $where = [];
+$where[] = active_villa_where('r');
 if ($search !== '') {
     $where[] = "r.room_number LIKE '%$search%'";
 }
@@ -54,7 +57,7 @@ $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
 $rooms = mysqli_query($conn, "SELECT r.*, t.type_name FROM rooms r JOIN room_types t ON r.room_type_id = t.id $where_clause ORDER BY r.id DESC LIMIT $offset, $per_page");
-$types_res = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
+$types_res = mysqli_query($conn, "SELECT * FROM room_types WHERE villa_id=$vid ORDER BY type_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">

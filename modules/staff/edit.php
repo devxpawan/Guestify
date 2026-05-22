@@ -9,8 +9,8 @@ if (!has_role(['Admin', 'Manager'])) {
 }
 
 $id = (int)$_GET['id'];
-$staff = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM staff WHERE id=$id"));
-$positions_query = mysqli_query($conn, "SELECT * FROM staff_positions ORDER BY position_name");
+$staff = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM staff WHERE id=$id AND " . active_villa_where_raw()));
+$positions_query = mysqli_query($conn, "SELECT * FROM staff_positions WHERE " . active_villa_where_raw() . " ORDER BY position_name");
 if (!$staff) {
     header('Location: index.php');
     exit();
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $salary = !empty($_POST['salary']) ? (float)$_POST['salary'] : 0;
 
-    $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', nic='$nic', email='$email', salary=$salary WHERE id=$id";
+    $query = "UPDATE staff SET name='$name', position='$position', phone='$phone', nic='$nic', email='$email', salary=$salary WHERE id=$id AND " . active_villa_where_raw();
     if (mysqli_query($conn, $query)) {
         $old_staff_data = [
             'name' => $staff['name'],

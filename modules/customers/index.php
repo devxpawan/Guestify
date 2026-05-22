@@ -5,11 +5,11 @@ require_once '../../includes/pagination.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     $id = (int)$_POST['id'];
-    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM customers WHERE id=$id"));
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM customers WHERE id=$id AND " . active_villa_where()));
     if ($item) {
         $old_is_active = $item['is_active'];
         $new_is_active = $item['is_active'] ? 0 : 1;
-        mysqli_query($conn, "UPDATE customers SET is_active=$new_is_active WHERE id=$id");
+        mysqli_query($conn, "UPDATE customers SET is_active=$new_is_active WHERE id=$id AND " . active_villa_where());
         $_SESSION['success'] = 'Customer status updated successfully!';
     }
     header("Location: " . $_SERVER['REQUEST_URI']);
@@ -30,6 +30,7 @@ if (isset($_GET['search']) && trim($_GET['search']) !== '') {
 if ($is_active_filter !== '') {
     $where_arr[] = "is_active = " . (int)$is_active_filter;
 }
+$where_arr[] = active_villa_where();
 $where = count($where_arr) > 0 ? "WHERE " . implode(" AND ", $where_arr) : "";
 
 // Pagination

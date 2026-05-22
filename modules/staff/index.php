@@ -10,11 +10,11 @@ if (!has_role(['Admin', 'Manager'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     $id = (int)$_POST['id'];
-    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM staff WHERE id=$id"));
+    $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM staff WHERE id=$id AND " . active_villa_where_raw()));
     if ($item) {
         $old_is_active = $item['is_active'];
         $new_is_active = $item['is_active'] ? 0 : 1;
-        mysqli_query($conn, "UPDATE staff SET is_active=$new_is_active WHERE id=$id");
+        mysqli_query($conn, "UPDATE staff SET is_active=$new_is_active WHERE id=$id AND " . active_villa_where_raw());
         $_SESSION['success'] = 'Staff status updated successfully!';
     }
     header("Location: " . $_SERVER['REQUEST_URI']);
@@ -28,7 +28,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['
 $position = isset($_GET['position']) ? mysqli_real_escape_string($conn, $_GET['position']) : '';
 $is_active_filter = isset($_GET['is_active']) ? mysqli_real_escape_string($conn, $_GET['is_active']) : '';
 
-$where = [];
+$where = [active_villa_where_raw()];
 if ($search !== '') {
     $where[] = "(name LIKE '%$search%' OR email LIKE '%$search%' OR phone LIKE '%$search%')";
 }
@@ -50,7 +50,7 @@ $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
 $staff = mysqli_query($conn, "SELECT * FROM staff $where_clause ORDER BY id DESC LIMIT $offset, $per_page");
-$positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM staff_positions ORDER BY position_name");
+$positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM staff_positions WHERE " . active_villa_where_raw() . " ORDER BY position_name");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">

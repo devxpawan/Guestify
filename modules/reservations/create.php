@@ -8,10 +8,11 @@ if (!has_role(['Admin', 'Receptionist'])) {
     exit();
 }
 
+$villa_id = active_villa_id();
 $error = '';
 $success = '';
 
-$customers = mysqli_query($conn, "SELECT * FROM customers WHERE is_active = 1 ORDER BY full_name");
+$customers = mysqli_query($conn, "SELECT * FROM customers WHERE is_active = 1 AND villa_id = $villa_id ORDER BY full_name");
 $room_types = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -55,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Precise datetime overlap check including Pending/Confirmed/Checked-In reservations
             $overlap_query = "SELECT id FROM reservations 
                               WHERE room_id = $room_id 
+                              AND villa_id = $villa_id
                               AND status NOT IN ('Cancelled','Checked-Out') 
                               AND (
                                   (check_in < '$check_out' AND check_out > '$check_in')
@@ -64,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (mysqli_num_rows($overlap) > 0) {
                 $error = 'Room is not available for the selected time slot!';
             } else {
-                $query = "INSERT INTO reservations (customer_id, room_id, booking_type, check_in, check_out, adults, children, status) 
-                          VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending')";
+                $query = "INSERT INTO reservations (customer_id, room_id, booking_type, check_in, check_out, adults, children, status, villa_id) 
+                          VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending', $villa_id)";
                 if (mysqli_query($conn, $query)) {
                     $reservation_id = mysqli_insert_id($conn);
 
