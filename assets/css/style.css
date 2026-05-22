@@ -132,13 +132,15 @@ body.toggled .top-navbar {
 .sidebar-brand-logo {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.65rem;
+    width: 100%;
 }
 
 .sidebar-brand-logo img {
-    height: 30px;
+    height: 40px;
     width: auto;
-    max-width: 32px;
+    max-width: 160px;
     object-fit: contain;
     border-radius: 6px;
 }

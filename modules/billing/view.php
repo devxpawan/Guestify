@@ -8,7 +8,7 @@ if (!has_role(['Admin', 'Cashier'])) {
 }
 
 $id = (int)$_GET['id'];
-$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r.check_in, r.check_out, r.adults, r.children, c.full_name, c.nic_passport, c.phone, c.email, c.address, rm.room_number, rm.price, rm.price_day, rm.price_night, rm.price_short 
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r.check_in, r.check_out, r.adults, r.children, c.full_name, c.nic_passport, c.phone, c.email, c.address, rm.room_number, rm.price, rm.price_day, rm.price_night, rm.price_short
                                                    FROM invoices i 
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
@@ -17,6 +17,13 @@ $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.booking_type, r
 if (!$invoice) {
     header('Location: index.php');
     exit();
+}
+
+// Check if this is a group invoice
+$group_rooms = null;
+if ($invoice['group_id']) {
+    $gid = (int)$invoice['group_id'];
+    $group_rooms = mysqli_query($conn, "SELECT rm.room_number FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE (r.id = $gid OR r.group_id = $gid) ORDER BY rm.room_number");
 }
 
 $items = mysqli_query($conn, "SELECT * FROM invoice_items WHERE invoice_id=$id AND " . active_villa_where());
@@ -64,7 +71,14 @@ include '../../includes/sidebar.php';
                         $room_rate = $invoice['price_short'];
                     }
                     ?>
-                    <p><strong>Room:</strong> <?= $invoice['room_number'] ?> (<?= htmlspecialchars($global_currency) ?><?= number_format($room_rate, 2) ?> / <?= htmlspecialchars($invoice['booking_type']) ?>)</p>
+                    <p><strong>Room:</strong>
+                        <?php if ($group_rooms && mysqli_num_rows($group_rooms) > 0): ?>
+                            <?php $room_list = []; mysqli_data_seek($group_rooms, 0); while ($gr = mysqli_fetch_assoc($group_rooms)) { $room_list[] = 'Room ' . $gr['room_number']; } ?>
+                            <?= implode(', ', $room_list) ?>
+                        <?php else: ?>
+                            <?= $invoice['room_number'] ?>
+                        <?php endif; ?>
+                        (<?= htmlspecialchars($global_currency) ?><?= number_format($room_rate, 2) ?> / <?= htmlspecialchars($invoice['booking_type']) ?>)</p>
                     <p><strong>Check-In:</strong> <?= $invoice['check_in'] ?></p>
                     <p><strong>Check-Out:</strong> <?= $invoice['check_out'] ?></p>
                     <p><strong>Adults:</strong> <?= $invoice['adults'] ?> | <strong>Children:</strong> <?= $invoice['children'] ?></p>
@@ -80,7 +94,7 @@ include '../../includes/sidebar.php';
                 <table class="table mb-0">
                     <thead><tr><th>Item</th><th>Type</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
                     <tbody>
-                        <?php while ($item = mysqli_fetch_assoc($items)): ?>
+                        <?php $has_items = false; while ($item = mysqli_fetch_assoc($items)): $has_items = true; ?>
                         <tr>
                             <td><?= htmlspecialchars($item['item_name']) ?></td>
                             <td><?= $item['item_type'] ?></td>
@@ -89,6 +103,11 @@ include '../../includes/sidebar.php';
                             <td><?= htmlspecialchars($global_currency) ?><?= number_format($item['total'], 2) ?></td>
                         </tr>
                         <?php endwhile; ?>
+                        <?php if (!$has_items): ?>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox"></i> No items found.</td>
+                        </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

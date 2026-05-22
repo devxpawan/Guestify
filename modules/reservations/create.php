@@ -16,133 +16,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nic_passport = mysqli_real_escape_string($conn, $_POST['nic_passport']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $room_ids = isset($_POST['room_ids']) ? $_POST['room_ids'] : [];
+    $booking_type = mysqli_real_escape_string($conn, $_POST['booking_type'] ?? 'Night Time');
+    $check_in = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_in']));
+    $check_out = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_out']));
+    $adults = (int)$_POST['adults'];
+    $children = (int)$_POST['children'];
+
+    $validation_error = null;
 
     if (!empty($email) && !str_contains($email, '@')) {
-        $_SESSION['error'] = 'Email must contain @.';
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
+        $validation_error = 'Email must contain @.';
+    } elseif (!empty($phone) && (!ctype_digit($phone) || strlen($phone) !== 10)) {
+        $validation_error = 'Phone must be exactly 10 digits.';
+    } elseif (empty($full_name) || empty($nic_passport) || empty($phone)) {
+        $validation_error = 'Please fill all customer details!';
+    } elseif (empty($room_ids)) {
+        $validation_error = 'Please select at least one room!';
+    } elseif (strtotime($check_out) <= strtotime($check_in)) {
+        $validation_error = 'Check-out must be after check-in!';
     }
 
-    if (!empty($phone) && (!ctype_digit($phone) || strlen($phone) !== 10)) {
-        $_SESSION['error'] = 'Phone must be exactly 10 digits.';
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
-    }
-    
-    if (empty($full_name) || empty($nic_passport) || empty($phone)) {
-        $_SESSION['error'] = 'Please fill all customer details!';
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
-    }
-
-    $c_query = "INSERT INTO customers (full_name, nic_passport, phone, email, villa_id) VALUES ('$full_name', '$nic_passport', '$phone', '$email', $villa_id)";
-    if (mysqli_query($conn, $c_query)) {
-        $customer_id = mysqli_insert_id($conn);
+    if ($validation_error) {
+        $_SESSION['error'] = $validation_error;
     } else {
-        $_SESSION['error'] = "Failed to create customer: " . mysqli_error($conn);
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
+        $c_query = "INSERT INTO customers (full_name, nic_passport, phone, email, villa_id) VALUES ('$full_name', '$nic_passport', '$phone', '$email', $villa_id)";
+        if (mysqli_query($conn, $c_query)) {
+            $customer_id = mysqli_insert_id($conn);
+        } else {
+            $_SESSION['error'] = "Failed to create customer: " . mysqli_error($conn);
+            $validation_error = true;
+        }
     }
 
-        $room_id = (int)$_POST['room_id'];
-        $booking_type = mysqli_real_escape_string($conn, $_POST['booking_type'] ?? 'Night Time');
-        $check_in = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_in']));
-        $check_out = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_out']));
-        $adults = (int)$_POST['adults'];
-        $children = (int)$_POST['children'];
+    if (!$validation_error) {
 
-        if (empty($room_id)) {
-            $_SESSION['error'] = 'Please select an available room!';
-            header("Location: " . $_SERVER['REQUEST_URI']);
-            exit();
-        } elseif (strtotime($check_out) <= strtotime($check_in)) {
-            $_SESSION['error'] = 'Check-out must be after check-in!';
-            header("Location: " . $_SERVER['REQUEST_URI']);
-            exit();
-        } else {
-            // Precise datetime overlap check including Pending/Confirmed/Checked-In reservations
+        $first_id = null;
+        $created_ids = [];
+        $all_ok = true;
+
+        foreach ($room_ids as $rid) {
+            $room_id = (int)$rid;
+            if ($room_id <= 0) continue;
+
+            // Overlap check
             $overlap_query = "SELECT id FROM reservations 
                               WHERE room_id = $room_id 
                               AND villa_id = $villa_id
                               AND status NOT IN ('Cancelled','Checked-Out') 
-                              AND (
-                                  (check_in < '$check_out' AND check_out > '$check_in')
-                              )";
+                              AND (check_in < '$check_out' AND check_out > '$check_in')";
             $overlap = mysqli_query($conn, $overlap_query);
             
             if (mysqli_num_rows($overlap) > 0) {
-                $_SESSION['error'] = 'Room is not available for the selected time slot!';
-                header("Location: " . $_SERVER['REQUEST_URI']);
-                exit();
-            } else {
-                $query = "INSERT INTO reservations (customer_id, room_id, booking_type, check_in, check_out, adults, children, status, villa_id) 
-                          VALUES ($customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending', $villa_id)";
-                if (mysqli_query($conn, $query)) {
-                    $reservation_id = mysqli_insert_id($conn);
+                $_SESSION['error'] = "Room ID $room_id is not available for the selected time slot!";
+                $all_ok = false;
+                break;
+            }
 
-                    logAudit('CREATE', 'reservations', $reservation_id, "Reservation created for customer ID $customer_id, room ID $room_id");
-
-                    
-                    // Calculate room charges based on booking type & duration
-                    $room_res = mysqli_query($conn, "SELECT * FROM rooms WHERE id = $room_id");
-                    $room = mysqli_fetch_assoc($room_res);
-                    
-                    $check_in_ts = strtotime($check_in);
-                    $check_out_ts = strtotime($check_out);
-                    $hours_diff = ($check_out_ts - $check_in_ts) / 3600;
-                    
-                    if ($booking_type == 'Day Time') {
-                        $room_charges = $room['price_day'];
-                    } elseif ($booking_type == 'Short Time') {
-                        $room_charges = $room['price_short'];
-                    } else {
-                        // Night Time - calculate by nights
-                        $nights = max(1, ceil($hours_diff / 24));
-                        $room_charges = $room['price_night'] * $nights;
-                    }
-                    
-                    $grand_total = $room_charges; // No tax applied
-                    
-                    // Create invoice
-                    mysqli_query($conn, "INSERT INTO invoices (reservation_id, room_charges, product_charges, discount, grand_total, payment_status, villa_id)
-                                         VALUES ($reservation_id, $room_charges, 0, 0, $grand_total, 'Unpaid', $villa_id)");
-                    $invoice_id = mysqli_insert_id($conn);
-
-                    
-                    // Record payment if amount was provided
-                    $payment_amount = (float)($_POST['payment_amount'] ?? 0);
-                    $payment_method = mysqli_real_escape_string($conn, $_POST['payment_method'] ?? 'Cash');
-                    
-                    if ($payment_amount > 0) {
-                        mysqli_query($conn, "INSERT INTO payments (invoice_id, amount, payment_method, villa_id)
-                                             VALUES ($invoice_id, $payment_amount, '$payment_method', $villa_id)");
-                        $payment_id = mysqli_insert_id($conn);
-                        
-                        $old_invoice_status = 'Unpaid'; // Initial status before potential update
-                        $new_invoice_status = '';
-
-                        if ($payment_amount >= $grand_total) {
-                            mysqli_query($conn, "UPDATE invoices SET payment_status='Paid' WHERE id=$invoice_id");
-                            $new_invoice_status = 'Paid';
-                        } else {
-                            mysqli_query($conn, "UPDATE invoices SET payment_status='Partial' WHERE id=$invoice_id");
-                            $new_invoice_status = 'Partial';
-                        }
-
-                        if ($new_invoice_status !== $old_invoice_status) {
-                        }
-                    }
-                    
-                    $_SESSION['success'] = 'Reservation created successfully! Invoice #' . $invoice_id . ' generated.';
-                    header("Location: index.php");
-                    exit();
-                } else {
-                    $_SESSION['error'] = 'Failed: ' . mysqli_error($conn);
-                    header("Location: " . $_SERVER['REQUEST_URI']);
-                    exit();
+            $query = "INSERT INTO reservations (group_id, customer_id, room_id, booking_type, check_in, check_out, adults, children, status, villa_id) 
+                      VALUES (NULL, $customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending', $villa_id)";
+            if (mysqli_query($conn, $query)) {
+                $reservation_id = mysqli_insert_id($conn);
+                if ($first_id === null) {
+                    $first_id = $reservation_id;
                 }
+                $created_ids[] = $reservation_id;
+            } else {
+                $_SESSION['error'] = 'Failed: ' . mysqli_error($conn);
+                $all_ok = false;
+                break;
             }
         }
+
+        if ($all_ok && $first_id !== null && count($created_ids) > 1) {
+            // Update all created reservations with the group_id
+            $ids_str = implode(',', $created_ids);
+            mysqli_query($conn, "UPDATE reservations SET group_id = $first_id WHERE id IN ($ids_str)");
+        }
+
+        if ($all_ok && $first_id !== null) {
+            $room_names = [];
+            foreach ($created_ids as $res_id) {
+                $rn = mysqli_fetch_assoc(mysqli_query($conn, "SELECT rm.room_number FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE r.id = $res_id"));
+                if ($rn) $room_names[] = $rn['room_number'];
+            }
+            
+            if (count($created_ids) > 1) {
+                logAudit('CREATE', 'reservations', $first_id, "Group booking created for customer ID $customer_id, rooms: " . implode(', ', $room_names) . " (group_id: $first_id)");
+                $_SESSION['success'] = 'Group reservation created successfully! Rooms: ' . implode(', ', $room_names) . '.';
+            } else {
+                logAudit('CREATE', 'reservations', $first_id, "Reservation created for customer ID $customer_id, room ID $room_id");
+                $_SESSION['success'] = 'Reservation created successfully!';
+            }
+            
+            header("Location: index.php");
+            exit();
+        } elseif (!$all_ok) {
+        }
+    }
 }
 
 include '../../includes/header.php';
@@ -153,7 +124,7 @@ include '../../includes/sidebar.php';
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h2><i class="bi bi-calendar-plus"></i> New Reservation</h2>
-                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Create a booking with optional advance payment</p>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Create a booking for one or more rooms</p>
             </div>
             <a href="index.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Reservations</a>
         </div>
@@ -220,41 +191,21 @@ include '../../includes/sidebar.php';
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Room Type</label>
-                        <select name="room_type_id" id="roomTypeId" class="form-select" required disabled>
-                            <option value="">Please select Check-In & Check-Out dates first...</option>
+                        <label class="form-label">Room Type <small class="text-muted">(optional filter)</small></label>
+                        <select name="room_type_id" id="roomTypeId" class="form-select" disabled>
+                            <option value="">All Types</option>
                             <?php mysqli_data_seek($room_types, 0); while ($t = mysqli_fetch_assoc($room_types)): ?>
                             <option value="<?= $t['id'] ?>" <?= (isset($_POST['room_type_id']) && $_POST['room_type_id'] == $t['id']) ? 'selected' : '' ?>><?= htmlspecialchars($t['type_name']) ?></option>
                             <?php endwhile; ?>
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Available Room</label>
-                        <select name="room_id" class="form-select" required disabled>
-                            <option value="">Please select Room Type first...</option>
-                        </select>
-                    </div>
                 </div>
 
-                <!-- Payment Section -->
-                <div class="card bg-light border mt-4 mb-3">
-                    <div class="card-body">
-                        <h6 class="mb-3"><i class="fas fa-credit-card me-1"></i> Advance Payment <small class="text-muted">(Optional)</small></h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Payment Amount (<?= htmlspecialchars($global_currency) ?>)</label>
-                                <input type="number" step="0.01" name="payment_amount" class="form-control" placeholder="0.00" min="0" value="<?= htmlspecialchars($_POST['payment_amount'] ?? '') ?>">
-                                <small class="text-muted">Leave 0 for no advance payment. Full amount can be paid later.</small>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Payment Method</label>
-                                <select name="payment_method" class="form-select">
-                                    <option value="Cash">Cash</option>
-                                    <option value="Card">Card</option>
-                                    <option value="Bank Transfer">Bank Transfer</option>
-                                </select>
-                            </div>
-                        </div>
+                <!-- Multi-Room Selection -->
+                <div class="mb-3">
+                    <label class="form-label">Available Rooms <small class="text-muted">(select one or more)</small></label>
+                    <div id="roomCheckboxes" class="border rounded p-3 bg-light" style="min-height: 60px;">
+                        <p class="text-muted mb-0"><em>Select Check-In & Check-Out dates and Room Type first...</em></p>
                     </div>
                 </div>
 
@@ -274,22 +225,19 @@ $(document).ready(function() {
     const checkOutInput = $('input[name="check_out"]');
     const bookingTypeSelect = $('#bookingType');
     const roomTypeSelect = $('#roomTypeId');
-    const roomSelect = $('select[name="room_id"]');
-    const originalSelectedRoom = "<?= isset($_POST['room_id']) ? (int)$_POST['room_id'] : '' ?>";
+    const roomCheckboxes = $('#roomCheckboxes');
 
     function updateRoomTypeSelector() {
         const checkIn = checkInInput.val();
         const checkOut = checkOutInput.val();
 
         if (!checkIn || !checkOut || new Date(checkOut) <= new Date(checkIn)) {
-            roomTypeSelect.prop('disabled', true).val('');
-            roomTypeSelect.find('option:first').text('Please select Check-In & Check-Out dates first...');
-            roomSelect.prop('disabled', true).html('<option value="">Please select Check-In & Check-Out dates first...</option>');
+            roomTypeSelect.prop('disabled', true);
+            roomCheckboxes.html('<p class="text-muted mb-0"><em>Select Check-In & Check-Out dates first...</em></p>');
             return;
         }
 
         roomTypeSelect.prop('disabled', false);
-        roomTypeSelect.find('option:first').text('Select Room Type');
         fetchAvailableRooms();
     }
 
@@ -303,12 +251,7 @@ $(document).ready(function() {
             return;
         }
 
-        if (!roomTypeId) {
-            roomSelect.prop('disabled', true).html('<option value="">Please select Room Type first...</option>');
-            return;
-        }
-
-        roomSelect.prop('disabled', true).html('<option value="">Loading available rooms...</option>');
+        roomCheckboxes.html('<p class="text-muted mb-0"><em>Loading available rooms...</em></p>');
 
         $.ajax({
             url: 'get_available_rooms.php',
@@ -316,31 +259,49 @@ $(document).ready(function() {
             data: {
                 check_in: checkIn,
                 check_out: checkOut,
-                room_type_id: roomTypeId,
+                room_type_id: roomTypeId || 0,
                 booking_type: bookingType
             },
             dataType: 'json',
             success: function(rooms) {
                 if (rooms.error) {
-                    roomSelect.html('<option value="">' + rooms.error + '</option>');
+                    roomCheckboxes.html('<p class="text-muted mb-0"><em>' + rooms.error + '</em></p>');
                     return;
                 }
 
                 if (rooms.length === 0) {
-                    roomSelect.html('<option value="">No rooms available for this type</option>');
+                    roomCheckboxes.html('<p class="text-muted mb-0"><em>No rooms available</em></p>');
                     return;
                 }
 
-                let options = '<option value="">Select Room</option>';
+                // Group by type_name
+                const grouped = {};
                 rooms.forEach(function(room) {
-                    const isSelected = room.id == originalSelectedRoom ? 'selected' : '';
-                    options += `<option value="${room.id}" ${isSelected}>Room ${room.room_number} - ${room.type_name} (<?= htmlspecialchars($global_currency) ?>${parseFloat(room.price).toFixed(2)})</option>`;
+                    if (!grouped[room.type_name]) grouped[room.type_name] = [];
+                    grouped[room.type_name].push(room);
                 });
 
-                roomSelect.html(options).prop('disabled', false);
+                let html = '';
+                const typeKeys = Object.keys(grouped);
+                typeKeys.forEach(function(typeName, idx) {
+                    html += '<div class="mb-3' + (idx > 0 ? ' mt-3' : '') + '">';
+                    html += '<strong class="d-block mb-2 text-muted" style="font-size:0.85rem;">' + typeName + '</strong>';
+                    html += '<div class="row g-2">';
+                    grouped[typeName].forEach(function(room) {
+                        html += '<div class="col-md-4 col-sm-6">';
+                        html += '<div class="form-check form-check-inline border bg-white rounded p-2 w-100">';
+                        html += '<input class="form-check-input" type="checkbox" name="room_ids[]" value="' + room.id + '" id="room_' + room.id + '">';
+                        html += '<label class="form-check-label d-block" for="room_' + room.id + '">';
+                        html += '<strong>Room ' + room.room_number + '</strong><br>';
+                        html += '<small class="text-muted">' + room.type_name + ' (<?= htmlspecialchars($global_currency) ?>' + parseFloat(room.price).toFixed(2) + ')</small>';
+                        html += '</label></div></div>';
+                    });
+                    html += '</div></div>';
+                });
+                roomCheckboxes.html(html);
             },
             error: function() {
-                roomSelect.html('<option value="">Failed to fetch available rooms</option>');
+                roomCheckboxes.html('<p class="text-danger mb-0"><em>Failed to fetch available rooms</em></p>');
             }
         });
     }
@@ -352,10 +313,7 @@ $(document).ready(function() {
 
     if (checkInInput.val() && checkOutInput.val()) {
         roomTypeSelect.prop('disabled', false);
-        roomTypeSelect.find('option:first').text('Select Room Type');
-        if (roomTypeSelect.val()) {
-            fetchAvailableRooms();
-        }
+        fetchAvailableRooms();
     }
 });
 </script>

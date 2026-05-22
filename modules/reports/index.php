@@ -20,13 +20,22 @@ $daily = mysqli_fetch_assoc(mysqli_query($conn, "
 
 // Reservations list for selected date
 $today_reservations = mysqli_query($conn, "
-    SELECT r.*, c.full_name, rm.room_number
+    SELECT 
+        COALESCE(r.group_id, r.id) AS gid,
+        GROUP_CONCAT(DISTINCT rm.room_number ORDER BY rm.room_number SEPARATOR ', ') AS room_numbers,
+        GROUP_CONCAT(r.id ORDER BY rm.room_number) AS reservation_ids,
+        MIN(r.check_in) AS check_in,
+        MAX(r.check_out) AS check_out,
+        MIN(r.status) AS status,
+        MAX(c.full_name) AS full_name,
+        COUNT(*) AS room_count
     FROM reservations r
     JOIN customers c ON r.customer_id = c.id
     JOIN rooms rm ON r.room_id = rm.id
     WHERE DATE(r.created_at) BETWEEN '$date_from' AND '$date_to'
     AND " . active_villa_where('r') . "
-    ORDER BY r.created_at DESC");
+    GROUP BY COALESCE(r.group_id, r.id)
+    ORDER BY gid DESC");
 
 // Room occupancy
 $occupancy = mysqli_query($conn, "
@@ -159,7 +168,12 @@ include '../../includes/sidebar.php';
                                 <?php if (mysqli_num_rows($today_reservations) > 0): ?>
                                 <?php while ($r = mysqli_fetch_assoc($today_reservations)): ?>
                                 <tr>
-                                    <td><span class="badge bg-secondary"><?= htmlspecialchars($r['room_number']) ?></span></td>
+                                    <td>
+                                        <?php if ($r['room_count'] > 1): ?>
+                                            <span class="badge bg-secondary"><?= $r['room_count'] ?> Rooms</span><br>
+                                        <?php endif; ?>
+                                        <span class="badge bg-secondary"><?= htmlspecialchars($r['room_numbers']) ?></span>
+                                    </td>
                                     <td><?= htmlspecialchars($r['full_name']) ?></td>
                                     <td><?= date('M d, Y', strtotime($r['check_in'])) ?></td>
                                     <td><?= date('M d, Y', strtotime($r['check_out'])) ?></td>

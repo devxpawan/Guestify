@@ -11,31 +11,81 @@ $revenue = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(grand_total
 $pending = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE status='Pending' AND " . active_villa_where_raw()))[0];
 $checked_in = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM reservations WHERE status='Checked-In' AND " . active_villa_where_raw()))[0];
 
-$recent = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check_in, r.check_out, r.status 
-                               FROM reservations r 
-                               JOIN customers c ON r.customer_id = c.id 
-                               JOIN rooms rm ON r.room_id = rm.id 
-                               WHERE " . active_villa_where('r') . "
-                               ORDER BY r.id DESC LIMIT 5");
+$recent = mysqli_query($conn, "SELECT 
+    COALESCE(r.group_id, r.id) AS gid,
+    GROUP_CONCAT(DISTINCT rm.room_number ORDER BY rm.room_number SEPARATOR ', ') AS room_numbers,
+    GROUP_CONCAT(r.id ORDER BY rm.room_number) AS reservation_ids,
+    r.group_id,
+    MIN(r.check_in) AS check_in,
+    MAX(r.check_out) AS check_out,
+    MIN(r.status) AS status,
+    MAX(c.full_name) AS full_name,
+    COUNT(*) AS room_count
+FROM reservations r 
+JOIN customers c ON r.customer_id = c.id 
+JOIN rooms rm ON r.room_id = rm.id 
+WHERE " . active_villa_where('r') . "
+GROUP BY COALESCE(r.group_id, r.id)
+ORDER BY gid DESC LIMIT 5");
 
 $today = date('Y-m-d');
-$arrivals = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check_in, r.check_out, r.status 
-                                 FROM reservations r 
-                                 JOIN customers c ON r.customer_id = c.id 
-                                 JOIN rooms rm ON r.room_id = rm.id 
-                                 WHERE DATE(r.check_in) = '$today' AND r.status IN ('Pending', 'Confirmed') AND " . active_villa_where('r') . "
-                                 ORDER BY r.check_in ASC");
+$arrivals = mysqli_query($conn, "SELECT 
+    COALESCE(r.group_id, r.id) AS gid,
+    GROUP_CONCAT(DISTINCT rm.room_number ORDER BY rm.room_number SEPARATOR ', ') AS room_numbers,
+    GROUP_CONCAT(r.id ORDER BY rm.room_number) AS reservation_ids,
+    MIN(r.check_in) AS check_in,
+    MAX(r.check_out) AS check_out,
+    MIN(r.status) AS status,
+    MAX(c.full_name) AS full_name,
+    COUNT(*) AS room_count
+FROM reservations r 
+JOIN customers c ON r.customer_id = c.id 
+JOIN rooms rm ON r.room_id = rm.id 
+WHERE DATE(r.check_in) = '$today' AND r.status IN ('Pending', 'Confirmed') AND " . active_villa_where('r') . "
+GROUP BY COALESCE(r.group_id, r.id)
+ORDER BY check_in ASC");
 
-$departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.check_in, r.check_out, r.status 
-                                   FROM reservations r 
-                                   JOIN customers c ON r.customer_id = c.id 
-                                   JOIN rooms rm ON r.room_id = rm.id 
-                                   WHERE DATE(r.check_out) = '$today' AND r.status = 'Checked-In' AND " . active_villa_where('r') . "
-                                   ORDER BY r.check_out ASC");
+$departures = mysqli_query($conn, "SELECT 
+    COALESCE(r.group_id, r.id) AS gid,
+    GROUP_CONCAT(DISTINCT rm.room_number ORDER BY rm.room_number SEPARATOR ', ') AS room_numbers,
+    GROUP_CONCAT(r.id ORDER BY rm.room_number) AS reservation_ids,
+    MIN(r.check_in) AS check_in,
+    MAX(r.check_out) AS check_out,
+    MIN(r.status) AS status,
+    MAX(c.full_name) AS full_name,
+    COUNT(*) AS room_count
+FROM reservations r 
+JOIN customers c ON r.customer_id = c.id 
+JOIN rooms rm ON r.room_id = rm.id 
+WHERE DATE(r.check_out) = '$today' AND r.status = 'Checked-In' AND " . active_villa_where('r') . "
+GROUP BY COALESCE(r.group_id, r.id)
+ORDER BY check_out ASC");
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h4 class="mb-0"><i class="bi bi-grid-1x2"></i> Overview</h4>
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <span class="fw-semibold text-muted" style="font-size: 0.85rem;"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> QUICK ACTIONS:</span>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <?php if (has_role(['Admin', 'Receptionist'])): ?>
+                            <a href="modules/reservations/create.php" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> New Reservation</a>
+                            <?php endif; ?>
+                            
+                            <?php if (has_role(['Admin', 'Manager', 'Receptionist'])): ?>
+                            <a href="modules/room_service/index.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-cart-plus"></i> Room Service</a>
+                            <?php endif; ?>
+
+
+                            <?php if (has_role(['Admin', 'Manager', 'Receptionist'])): ?>
+                            <a href="modules/reports/index.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-graph-up"></i> Reports</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row">
@@ -86,33 +136,6 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card shadow-sm border-0" style="border-radius: 12px; border: 1px solid #e2e8f0;">
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <span class="fw-semibold text-muted" style="font-size: 0.85rem;"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> QUICK ACTIONS:</span>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <?php if (has_role(['Admin', 'Receptionist'])): ?>
-                            <a href="modules/reservations/create.php" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> New Reservation</a>
-                            <?php endif; ?>
-                            
-                            <?php if (has_role(['Admin', 'Manager', 'Receptionist'])): ?>
-                            <a href="modules/room_service/index.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-cart-plus"></i> Room Service</a>
-                            <?php endif; ?>
-
-
-                            <?php if (has_role(['Admin', 'Manager', 'Receptionist'])): ?>
-                            <a href="modules/reports/index.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-graph-up"></i> Reports</a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="row mt-2">
         <div class="col-12">
             <div class="card">
@@ -157,11 +180,13 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while ($arr = mysqli_fetch_assoc($arrivals)): ?>
+                                        <?php while ($arr = mysqli_fetch_assoc($arrivals)):
+                                            $first_id = (int)explode(',', $arr['reservation_ids'])[0];
+                                        ?>
                                         <tr>
                                             <td>
                                                 <div><strong><?= htmlspecialchars($arr['full_name']) ?></strong></div>
-                                                <small class="text-muted"><span class="badge bg-light text-dark">Rm <?= $arr['room_number'] ?></span></small>
+                                                <small class="text-muted"><span class="badge bg-light text-dark">Rm <?= htmlspecialchars($arr['room_numbers']) ?></span></small>
                                             </td>
                                             <td>
                                                 <i class="bi bi-clock me-1 text-muted"></i> <?= date('h:i A', strtotime($arr['check_in'])) ?>
@@ -172,14 +197,14 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
                                             <td>
                                                 <?php if (has_role(['Admin', 'Receptionist'])): ?>
                                                     <?php if ($arr['status'] == 'Pending'): ?>
-                                                    <form method="POST" action="modules/reservations/status.php" class="d-inline" onsubmit="return confirm('Confirm reservation #<?= $arr['id'] ?>?');">
-                                                        <input type="hidden" name="id" value="<?= $arr['id'] ?>">
+                                                    <form method="POST" action="modules/reservations/status.php" class="d-inline" onsubmit="return confirm('Confirm reservation?');">
+                                                        <input type="hidden" name="gid" value="<?= $arr['gid'] ?>">
                                                         <input type="hidden" name="status" value="Confirmed">
                                                         <button type="submit" class="btn btn-sm btn-success py-1 px-2" title="Confirm Booking" style="font-size: 0.75rem;"><i class="bi bi-check-circle"></i> Confirm</button>
                                                     </form>
                                                     <?php else: ?>
-                                                    <form method="POST" action="modules/reservations/status.php" class="d-inline" onsubmit="return confirm('Check-In guest for reservation #<?= $arr['id'] ?>?');">
-                                                        <input type="hidden" name="id" value="<?= $arr['id'] ?>">
+                                                    <form method="POST" action="modules/reservations/status.php" class="d-inline" onsubmit="return confirm('Check-In guest?');">
+                                                        <input type="hidden" name="gid" value="<?= $arr['gid'] ?>">
                                                         <input type="hidden" name="status" value="Checked-In">
                                                         <button type="submit" class="btn btn-sm btn-info py-1 px-2 text-white" title="Check-In Guest" style="font-size: 0.75rem;"><i class="bi bi-box-arrow-in-right"></i> Check-In</button>
                                                     </form>
@@ -212,19 +237,21 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while ($dep = mysqli_fetch_assoc($departures)): ?>
+                                        <?php while ($dep = mysqli_fetch_assoc($departures)):
+                                            $first_id = (int)explode(',', $dep['reservation_ids'])[0];
+                                        ?>
                                         <tr>
                                             <td>
                                                 <div><strong><?= htmlspecialchars($dep['full_name']) ?></strong></div>
-                                                <small class="text-muted"><span class="badge bg-light text-dark">Rm <?= $dep['room_number'] ?></span></small>
+                                                <small class="text-muted"><span class="badge bg-light text-dark">Rm <?= htmlspecialchars($dep['room_numbers']) ?></span></small>
                                             </td>
                                             <td>
                                                 <i class="bi bi-clock me-1 text-muted"></i> <?= date('h:i A', strtotime($dep['check_out'])) ?>
                                             </td>
                                             <td>
                                                 <?php if (has_role(['Admin', 'Receptionist'])): ?>
-                                                <form method="POST" action="modules/reservations/status.php" class="d-inline" onsubmit="return confirm('Check-Out guest for reservation #<?= $dep['id'] ?>?');">
-                                                    <input type="hidden" name="id" value="<?= $dep['id'] ?>">
+                                                <form method="POST" action="modules/reservations/status.php" class="d-inline" onsubmit="return confirm('Check-Out guest?');">
+                                                    <input type="hidden" name="gid" value="<?= $dep['gid'] ?>">
                                                     <input type="hidden" name="status" value="Checked-Out">
                                                     <button type="submit" class="btn btn-sm btn-secondary py-1 px-2" title="Check-Out Guest" style="font-size: 0.75rem;"><i class="bi bi-box-arrow-right"></i> Check-Out</button>
                                                 </form>
@@ -266,16 +293,19 @@ $departures = mysqli_query($conn, "SELECT r.id, c.full_name, rm.room_number, r.c
                             </thead>
                             <tbody>
                                 <?php 
-                                mysqli_data_seek($recent, 0); // Reset result pointer
+                                mysqli_data_seek($recent, 0);
                                 while ($r = mysqli_fetch_assoc($recent)): 
                                 ?>
                                 <tr>
                                     <td>
                                         <div class="fw-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($r['full_name']) ?></div>
-                                        <small class="text-muted" style="font-size: 0.75rem;">ID #<?= $r['id'] ?></small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">ID #<?= $r['gid'] ?></small>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark">Rm <?= $r['room_number'] ?></span>
+                                        <?php if ($r['room_count'] > 1): ?>
+                                            <span class="badge bg-light text-dark"><?= $r['room_count'] ?> Rms</span><br>
+                                        <?php endif; ?>
+                                        <span class="badge bg-light text-dark">Rm <?= htmlspecialchars($r['room_numbers']) ?></span>
                                     </td>
                                     <td>
                                         <span class="badge badge-<?= $r['status'] == 'Confirmed' ? 'success' : ($r['status'] == 'Pending' ? 'warning' : ($r['status'] == 'Checked-In' ? 'info' : ($r['status'] == 'Checked-Out' ? 'secondary' : 'danger'))) ?>" style="font-size: 0.7rem;"><?= $r['status'] ?></span>

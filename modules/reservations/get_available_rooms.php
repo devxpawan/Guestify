@@ -20,8 +20,17 @@ if (strtotime($check_out) <= strtotime($check_in)) {
     exit();
 }
 
-$exclude_res_id = isset($_GET['exclude_res_id']) ? (int)$_GET['exclude_res_id'] : 0;
-$exclude_cond = $exclude_res_id > 0 ? "AND id != $exclude_res_id" : "";
+// Accept comma-separated exclude IDs (for group edits)
+$exclude_ids_raw = isset($_GET['exclude_ids']) ? $_GET['exclude_ids'] : '0';
+$exclude_ids = preg_replace('/[^0-9,]/', '', $exclude_ids_raw);
+if ($exclude_ids === '') $exclude_ids = '0';
+$exclude_cond = "AND id NOT IN ($exclude_ids)";
+
+// Accept comma-separated room IDs to exclude (already in the group)
+$exclude_room_ids_raw = isset($_GET['exclude_room_ids']) ? $_GET['exclude_room_ids'] : '0';
+$exclude_room_ids = preg_replace('/[^0-9,]/', '', $exclude_room_ids_raw);
+if ($exclude_room_ids === '') $exclude_room_ids = '0';
+$room_exclude_cond = "AND r.id NOT IN ($exclude_room_ids)";
 
 $villa_id = active_villa_id();
 $room_type_id = isset($_GET['room_type_id']) ? (int)$_GET['room_type_id'] : 0;
@@ -40,6 +49,7 @@ $query = "SELECT r.id, r.room_number, t.type_name, $price_field AS price
           JOIN room_types t ON r.room_type_id = t.id 
           WHERE r.status != 'Maintenance' AND r.is_active = 1 AND r.villa_id = $villa_id
           $type_cond
+          $room_exclude_cond
           AND r.id NOT IN (
               SELECT DISTINCT room_id FROM reservations 
               WHERE status NOT IN ('Cancelled', 'Checked-Out') AND villa_id = $villa_id

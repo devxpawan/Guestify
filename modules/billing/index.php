@@ -41,7 +41,7 @@ $count_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM invoices i JOIN 
 $total_rows = mysqli_fetch_assoc($count_res)['total'];
 $total_pages = ceil($total_rows / $per_page);
 
-$invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number 
+$invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number
                                  FROM invoices i 
                                  JOIN reservations r ON i.reservation_id = r.id 
                                  JOIN customers c ON r.customer_id = c.id 
@@ -105,7 +105,17 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($inv = mysqli_fetch_assoc($invoices)): ?>
+                    <?php while ($inv = mysqli_fetch_assoc($invoices)): 
+                        $inv_rooms = null;
+                        if ($inv['group_id']) {
+                            $gid = (int)$inv['group_id'];
+                            $grp = mysqli_query($conn, "SELECT rm.room_number FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE (r.id = $gid OR r.group_id = $gid) ORDER BY rm.room_number");
+                            if ($grp && mysqli_num_rows($grp) > 0) {
+                                $list = []; while ($g = mysqli_fetch_assoc($grp)) { $list[] = $g['room_number']; }
+                                $inv_rooms = implode(', ', $list);
+                            }
+                        }
+                    ?>
                     <tr>
                         <td><strong>#<?= $inv['id'] ?></strong></td>
                         <td>
@@ -116,7 +126,13 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                                 <?= htmlspecialchars($inv['full_name']) ?>
                             </div>
                         </td>
-                        <td><span class="badge bg-secondary"><?= htmlspecialchars($inv['room_number']) ?></span></td>
+                        <td>
+                            <?php if ($inv_rooms): ?>
+                                <?= htmlspecialchars($inv_rooms) ?>
+                            <?php else: ?>
+                                <span class="badge bg-secondary"><?= htmlspecialchars($inv['room_number']) ?></span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['room_charges'], 2) ?></td>
                         <td><?= htmlspecialchars($global_currency) ?><?= number_format($inv['product_charges'], 2) ?></td>
                         <td class="text-success">-<?= htmlspecialchars($global_currency) ?><?= number_format($inv['discount'], 2) ?></td>

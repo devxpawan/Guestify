@@ -17,7 +17,7 @@ $id = (int)$_GET['id'];
 
 // --- POST HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number 
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number
                                                    FROM invoices i 
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
@@ -62,7 +62,7 @@ $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.che
 }
 
 // --- DISPLAY DATA ---
-$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number 
+$invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number
                                                    FROM invoices i 
                                                    JOIN reservations r ON i.reservation_id = r.id 
                                                    JOIN customers c ON r.customer_id = c.id 
@@ -71,6 +71,13 @@ $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.che
 if (!$invoice) {
     header('Location: index.php');
     exit();
+}
+
+// Check if this is a group invoice
+$group_rooms = null;
+if ($invoice['group_id']) {
+    $gid = (int)$invoice['group_id'];
+    $group_rooms = mysqli_query($conn, "SELECT rm.room_number FROM reservations r JOIN rooms rm ON r.room_id = rm.id WHERE (r.id = $gid OR r.group_id = $gid) ORDER BY rm.room_number");
 }
 
 $paid_total = mysqli_fetch_row(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=$id AND " . active_villa_where()))[0];
@@ -88,7 +95,7 @@ include '../../includes/sidebar.php';
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h2><i class="bi bi-credit-card"></i> Payments for Invoice #<?= $id ?></h2>
-                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Customer: <strong><?= htmlspecialchars($invoice['full_name']) ?></strong> &mdash; Room: <strong><?= htmlspecialchars($invoice['room_number']) ?></strong> &mdash; Check-in: <?= date('M d, Y', strtotime($invoice['check_in'])) ?> &mdash; Check-out: <?= date('M d, Y', strtotime($invoice['check_out'])) ?></p>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Customer: <strong><?= htmlspecialchars($invoice['full_name']) ?></strong> &mdash; Room: <strong><?php if ($group_rooms && mysqli_num_rows($group_rooms) > 0): $room_list = []; while ($gr = mysqli_fetch_assoc($group_rooms)) { $room_list[] = $gr['room_number']; } ?><?= implode(', ', $room_list) ?><?php else: ?><?= htmlspecialchars($invoice['room_number']) ?><?php endif; ?></strong> &mdash; Check-in: <?= date('M d, Y', strtotime($invoice['check_in'])) ?> &mdash; Check-out: <?= date('M d, Y', strtotime($invoice['check_out'])) ?></p>
             </div>
             <a href="index.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Invoices</a>
         </div>
