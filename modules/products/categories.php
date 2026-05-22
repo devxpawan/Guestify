@@ -7,6 +7,13 @@ if (!has_role(['Admin'])) {
     exit();
 }
 
+// Migration: add is_active column if not exists
+try {
+    mysqli_query($conn, "ALTER TABLE product_categories ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER category_name");
+} catch (mysqli_sql_exception $e) {
+    // Column already exists, ignore
+}
+
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,12 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-    } elseif (isset($_POST['delete'])) {
+    } elseif (isset($_POST['toggle_status'])) {
         $id = (int)$_POST['id'];
-        mysqli_query($conn, "DELETE FROM product_categories WHERE id=$id AND " . active_villa_where_raw());
-        $_SESSION['success'] = 'Category deleted!';
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
+        $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM product_categories WHERE id=$id AND " . active_villa_where_raw()));
+        if ($item) {
+            $new_status = $item['is_active'] ? 0 : 1;
+            mysqli_query($conn, "UPDATE product_categories SET is_active=$new_status WHERE id=$id AND " . active_villa_where_raw());
+            $_SESSION['success'] = 'Category status updated!';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
+        }
     }
 }
 
@@ -86,7 +97,7 @@ include '../../includes/sidebar.php';
                     <div class="table-responsive">
                         <table class="table mb-0">
                             <thead>
-                                <tr><th>#</th><th>Category</th><th>Actions</th></tr>
+                                <tr><th>#</th><th>Category</th><th>Status</th><th>Actions</th></tr>
                             </thead>
                             <tbody>
                                 <?php while ($c = mysqli_fetch_assoc($categories)): ?>
@@ -94,11 +105,18 @@ include '../../includes/sidebar.php';
                                     <td><strong>#<?= $c['id'] ?></strong></td>
                                     <td><?= htmlspecialchars($c['category_name']) ?></td>
                                     <td>
+                                        <span class="badge badge-<?= $c['is_active'] ? 'success' : 'danger' ?>">
+                                            <?= $c['is_active'] ? 'Active' : 'Inactive' ?>
+                                        </span>
+                                    </td>
+                                    <td>
                                         <div class="action-btns">
                                             <button class="btn btn-sm btn-outline-warning" onclick="editCategory(<?= $c['id'] ?>, '<?= htmlspecialchars($c['category_name']) ?>')"><i class="fas fa-pencil-alt"></i></button>
-                                            <form method="POST" style="display:inline" onsubmit="return confirm('Delete this category?')">
+                                            <form method="POST" style="display:inline">
                                                 <input type="hidden" name="id" value="<?= $c['id'] ?>">
-                                                <button type="submit" name="delete" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $c['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $c['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
+                                                    <i class="fas fa-<?= $c['is_active'] ? 'ban' : 'check' ?>"></i>
+                                                </button>
                                             </form>
                                         </div>
                                     </td>

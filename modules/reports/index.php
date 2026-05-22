@@ -7,23 +7,45 @@ if (!has_role(['Admin', 'Manager', 'Receptionist'])) {
     exit();
 }
 
-include '../../includes/header.php';
-include '../../includes/sidebar.php';
+$date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : date('Y-m-d');
+$date_to = isset($_GET['date_to']) ? mysqli_real_escape_string($conn, $_GET['date_to']) : date('Y-m-d');
 
-$daily = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue FROM reservations r LEFT JOIN invoices i ON r.id = i.reservation_id WHERE r.created_at >= CURDATE() AND " . active_villa_where('r')));
-$monthly_res = mysqli_query($conn, "SELECT DATE_FORMAT(r.created_at, '%Y-%m') as month, COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue FROM reservations r LEFT JOIN invoices i ON r.id = i.reservation_id WHERE " . active_villa_where('r') . " GROUP BY month ORDER BY month DESC LIMIT 6");
-$occupancy = mysqli_query($conn, "SELECT rm.room_number, t.type_name, rm.status FROM rooms rm JOIN room_types t ON rm.room_type_id = t.id WHERE " . active_villa_where('rm'));
-$top_customers = mysqli_query($conn, "SELECT c.full_name, COUNT(r.id) as bookings, COALESCE(SUM(i.grand_total),0) as spent FROM customers c LEFT JOIN reservations r ON c.id = r.customer_id AND " . active_villa_where('r') . " LEFT JOIN invoices i ON r.id = i.reservation_id GROUP BY c.id ORDER BY spent DESC LIMIT 5");
-$staff_report = mysqli_query($conn, "SELECT position, COUNT(*) as total, SUM(salary) as total_salary FROM staff WHERE " . active_villa_where_raw() . " GROUP BY position");
-$product_sales = mysqli_query($conn, "SELECT item_name, SUM(quantity) as qty, SUM(total) as total FROM invoice_items WHERE item_type='Product' AND " . active_villa_where_raw() . " GROUP BY item_name ORDER BY total DESC LIMIT 5");
+// Today's reservations
+$daily = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(*) as total, COALESCE(SUM(i.grand_total),0) as revenue
+    FROM reservations r
+    LEFT JOIN invoices i ON r.id = i.reservation_id
+    WHERE DATE(r.created_at) BETWEEN '$date_from' AND '$date_to'
+    AND " . active_villa_where('r')));
 
-// Income vs Expense summary
+// Reservations list for selected date
+$today_reservations = mysqli_query($conn, "
+    SELECT r.*, c.full_name, rm.room_number
+    FROM reservations r
+    JOIN customers c ON r.customer_id = c.id
+    JOIN rooms rm ON r.room_id = rm.id
+    WHERE DATE(r.created_at) BETWEEN '$date_from' AND '$date_to'
+    AND " . active_villa_where('r') . "
+    ORDER BY r.created_at DESC");
+
+// Room occupancy
+$occupancy = mysqli_query($conn, "
+    SELECT rm.room_number, t.type_name, rm.status
+    FROM rooms rm
+    JOIN room_types t ON rm.room_type_id = t.id
+    WHERE " . active_villa_where('rm') . "
+    ORDER BY rm.room_number");
+
+// Income vs Expense for selected period
 $finance = mysqli_fetch_assoc(mysqli_query($conn, "
     SELECT
         COALESCE(SUM(CASE WHEN type='Income' THEN amount ELSE 0 END), 0) AS total_income,
         COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS total_expense
-    FROM transactions WHERE " . active_villa_where_raw() . "
-"));
+    FROM transactions
+    WHERE DATE(transaction_date) BETWEEN '$date_from' AND '$date_to'
+    AND " . active_villa_where_raw()));
+
+// Monthly overview (last 6 months)
 $finance_monthly = mysqli_query($conn, "
     SELECT
         DATE_FORMAT(transaction_date, '%Y-%m') as month,
@@ -31,79 +53,125 @@ $finance_monthly = mysqli_query($conn, "
         COALESCE(SUM(CASE WHEN type='Expense' THEN amount ELSE 0 END), 0) AS expense
     FROM transactions
     WHERE " . active_villa_where_raw() . "
-    GROUP BY month ORDER BY month DESC LIMIT 6
-");
+    GROUP BY month ORDER BY month DESC LIMIT 6");
+
+include '../../includes/header.php';
+include '../../includes/sidebar.php';
 ?>
 <div id="page-content-wrapper" class="container-fluid p-4">
     <div class="page-header">
         <h2><i class="bi bi-graph-up"></i> Reports & Analytics</h2>
-        <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Comprehensive business insights and performance metrics</p>
+        <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">Daily performance overview and insights</p>
     </div>
 
-    <!-- Profit & Loss Summary -->
-    <?php if ($finance['total_income'] > 0 || $finance['total_expense'] > 0): ?>
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5><i class="bi bi-bar-chart-line"></i> Income & Expenses Overview</h5></div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($date_from) ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($date_to) ?>">
+                </div>
+                <div class="col-md-4 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Generate Report</button>
+                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Today"><i class="bi bi-calendar-day"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="row text-center g-3">
-                        <div class="col-md-3">
-                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Total Income</p>
-                            <h4 class="text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_income'], 2) ?></h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Reservations</p>
+                            <h4 class="mb-0 text-primary"><?= $daily['total'] ?></h4>
                         </div>
-                        <div class="col-md-3">
-                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Total Expenses</p>
-                            <h4 class="text-danger"><?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_expense'], 2) ?></h4>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Net Profit</p>
-                            <h4 class="<?= ($finance['total_income'] - $finance['total_expense']) >= 0 ? 'text-primary' : 'text-danger' ?>">
-                                <?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_income'] - $finance['total_expense'], 2) ?>
-                            </h4>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Profit Margin</p>
-                            <h4 class="text-info">
-                                <?= $finance['total_income'] > 0 ? number_format(($finance['total_income'] - $finance['total_expense']) / $finance['total_income'] * 100, 1) : 0 ?>%
-                            </h4>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-calendar-check text-primary fs-4"></i>
                         </div>
                     </div>
-                    <?php if (mysqli_num_rows($finance_monthly) > 0): ?>
-                    <hr>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead><tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th></tr></thead>
-                            <tbody>
-                                <?php while ($fm = mysqli_fetch_assoc($finance_monthly)): ?>
-                                <?php $net = $fm['income'] - $fm['expense']; ?>
-                                <tr>
-                                    <td><strong><?= $fm['month'] ?></strong></td>
-                                    <td class="text-success">+<?= htmlspecialchars($global_currency) ?><?= number_format($fm['income'], 2) ?></td>
-                                    <td class="text-danger">-<?= htmlspecialchars($global_currency) ?><?= number_format($fm['expense'], 2) ?></td>
-                                    <td><strong class="<?= $net >= 0 ? 'text-success' : 'text-danger' ?>"><?= htmlspecialchars($global_currency) ?><?= number_format($net, 2) ?></strong></td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Revenue</p>
+                            <h4 class="mb-0 text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($daily['revenue'], 2) ?></h4>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-cash-stack text-success fs-4"></i>
+                        </div>
                     </div>
-                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Income</p>
+                            <h4 class="mb-0 text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_income'], 2) ?></h4>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-graph-up-arrow text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Expenses</p>
+                            <h4 class="mb-0 text-danger"><?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_expense'], 2) ?></h4>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-graph-down-arrow text-danger fs-4"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <?php endif; ?>
 
     <div class="row">
         <div class="col-md-6 mb-3">
-            <div class="stat-card primary">
-                <div class="stat-icon"><i class="bi bi-calendar-day"></i></div>
-                <div class="stat-value"><?= $daily['total'] ?></div>
-                <div class="stat-label">Reservations Today</div>
-                <hr>
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted" style="font-size: 0.85rem;">Revenue Today</span>
-                    <strong class="text-primary" style="font-size: 1.25rem;"><?= htmlspecialchars($global_currency) ?><?= number_format($daily['revenue'], 2) ?></strong>
+            <div class="card">
+                <div class="card-header"><h5><i class="bi bi-list-check"></i> Reservations (<?= htmlspecialchars($date_from) ?><?= $date_from !== $date_to ? ' to ' . htmlspecialchars($date_to) : '' ?>)</h5></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead><tr><th>Room</th><th>Customer</th><th>Check-In</th><th>Check-Out</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <?php if (mysqli_num_rows($today_reservations) > 0): ?>
+                                <?php while ($r = mysqli_fetch_assoc($today_reservations)): ?>
+                                <tr>
+                                    <td><span class="badge bg-secondary"><?= htmlspecialchars($r['room_number']) ?></span></td>
+                                    <td><?= htmlspecialchars($r['full_name']) ?></td>
+                                    <td><?= date('M d, Y', strtotime($r['check_in'])) ?></td>
+                                    <td><?= date('M d, Y', strtotime($r['check_out'])) ?></td>
+                                    <td><span class="badge badge-<?= $r['status'] == 'Confirmed' ? 'success' : ($r['status'] == 'Pending' ? 'warning' : ($r['status'] == 'Checked-In' ? 'info' : ($r['status'] == 'Checked-Out' ? 'secondary' : 'danger'))) ?>"><?= $r['status'] ?></span></td>
+                                </tr>
+                                <?php endwhile; ?>
+                                <?php else: ?>
+                                <tr><td colspan="5" class="text-center text-muted py-3">No reservations for this period.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,99 +201,44 @@ $finance_monthly = mysqli_query($conn, "
     <div class="row">
         <div class="col-md-6 mb-3">
             <div class="card">
-                <div class="card-header"><h5><i class="bi bi-cash-stack"></i> Monthly Revenue</h5></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead><tr><th>Month</th><th>Reservations</th><th>Revenue</th></tr></thead>
-                            <tbody>
-                                <?php while ($m = mysqli_fetch_assoc($monthly_res)): ?>
-                                <tr>
-                                    <td><strong><?= $m['month'] ?></strong></td>
-                                    <td><?= $m['total'] ?></td>
-                                    <td><strong class="text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($m['revenue'], 2) ?></strong></td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
+                <div class="card-header"><h5><i class="bi bi-bar-chart-line"></i> Income & Expenses (<?= htmlspecialchars($date_from) ?><?= $date_from !== $date_to ? ' to ' . htmlspecialchars($date_to) : '' ?>)</h5></div>
+                <div class="card-body">
+                    <div class="row text-center g-3 mb-3">
+                        <div class="col-6">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Net Profit</p>
+                            <h4 class="<?= ($finance['total_income'] - $finance['total_expense']) >= 0 ? 'text-primary' : 'text-danger' ?>">
+                                <?= htmlspecialchars($global_currency) ?><?= number_format($finance['total_income'] - $finance['total_expense'], 2) ?>
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">Profit Margin</p>
+                            <h4 class="text-info"><?= $finance['total_income'] > 0 ? number_format(($finance['total_income'] - $finance['total_expense']) / $finance['total_income'] * 100, 1) : 0 ?>%</h4>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 mb-3">
             <div class="card">
-                <div class="card-header"><h5><i class="bi bi-trophy"></i> Top Customers</h5></div>
+                <div class="card-header"><h5><i class="bi bi-clock-history"></i> Monthly Overview</h5></div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table">
-                            <thead><tr><th>Customer</th><th>Bookings</th><th>Total Spent</th></tr></thead>
+                            <thead><tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th></tr></thead>
                             <tbody>
-                                <?php while ($tc = mysqli_fetch_assoc($top_customers)): ?>
+                                <?php if (mysqli_num_rows($finance_monthly) > 0): ?>
+                                <?php while ($fm = mysqli_fetch_assoc($finance_monthly)): ?>
+                                <?php $net = $fm['income'] - $fm['expense']; ?>
                                 <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
-                                                <i class="bi bi-person"></i>
-                                            </div>
-                                            <?= htmlspecialchars($tc['full_name']) ?>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge badge-secondary"><?= $tc['bookings'] ?></span></td>
-                                    <td><strong class="text-primary"><?= htmlspecialchars($global_currency) ?><?= number_format($tc['spent'], 2) ?></strong></td>
+                                    <td><strong><?= $fm['month'] ?></strong></td>
+                                    <td class="text-success">+<?= htmlspecialchars($global_currency) ?><?= number_format($fm['income'], 2) ?></td>
+                                    <td class="text-danger">-<?= htmlspecialchars($global_currency) ?><?= number_format($fm['expense'], 2) ?></td>
+                                    <td><strong class="<?= $net >= 0 ? 'text-success' : 'text-danger' ?>"><?= htmlspecialchars($global_currency) ?><?= number_format($net, 2) ?></strong></td>
                                 </tr>
                                 <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <div class="card">
-                <div class="card-header"><h5><i class="bi bi-people"></i> Staff Summary</h5></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead><tr><th>Position</th><th>Count</th><th>Total Salary</th></tr></thead>
-                            <tbody>
-                                <?php while ($sr = mysqli_fetch_assoc($staff_report)): ?>
-                                <tr>
-                                    <td><span class="badge badge-purple"><?= htmlspecialchars($sr['position']) ?></span></td>
-                                    <td><strong><?= $sr['total'] ?></strong></td>
-                                    <td><strong><?= htmlspecialchars($global_currency) . number_format($sr['total_salary'], 2) ?></strong></td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-3">
-            <div class="card">
-                <div class="card-header"><h5><i class="bi bi-box-seam"></i> Top Selling Products</h5></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead><tr><th>Product</th><th>Qty Sold</th><th>Total</th></tr></thead>
-                            <tbody>
-                                <?php while ($ps = mysqli_fetch_assoc($product_sales)): ?>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
-                                                <i class="bi bi-box"></i>
-                                            </div>
-                                            <?= htmlspecialchars($ps['item_name']) ?>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge badge-info"><?= $ps['qty'] ?></span></td>
-                                    <td><strong class="text-success"><?= htmlspecialchars($global_currency) ?><?= number_format($ps['total'], 2) ?></strong></td>
-                                </tr>
-                                <?php endwhile; ?>
+                                <?php else: ?>
+                                <tr><td colspan="4" class="text-center text-muted py-3">No data available.</td></tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>

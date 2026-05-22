@@ -4,37 +4,44 @@ require_once "../../config/database.php";
 
 $villa_id = (int)active_villa_id();
 
+// Migration: add is_active column if not exists
+try {
+    mysqli_query($conn, "ALTER TABLE room_types ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER type_name");
+} catch (mysqli_sql_exception $e) {
+    // Column already exists, ignore
+}
+
 if (!has_role(['Admin'])) {
     header('Location: index.php');
     exit();
 }
 
-$error = '';
-$success = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_type'])) {
         $type_name = mysqli_real_escape_string($conn, $_POST['type_name']);
-        if (!empty($type_name)) {
-            $query = "INSERT INTO room_types (type_name, villa_id) VALUES ('$type_name', $villa_id)";
-            if (mysqli_query($conn, $query)) {
-                $type_id = mysqli_insert_id($conn);
-                $_SESSION['success'] = "Room type added successfully!";
-                header("Location: " . $_SERVER['REQUEST_URI']);
-                exit();
-            } else {
-                $error = "Error: " . mysqli_error($conn);
-            }
+        if (empty($type_name)) {
+            $_SESSION['error'] = 'Type name is required.';
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         }
-    } elseif (isset($_POST['delete_type'])) {
-        $id = (int)$_POST['id'];
-        $check = mysqli_query($conn, "SELECT id FROM rooms WHERE room_type_id=$id AND villa_id=$villa_id");
-        if (mysqli_num_rows($check) > 0) {
-            $error = "Cannot delete: This type is being used by rooms.";
+        $query = "INSERT INTO room_types (type_name, villa_id) VALUES ('$type_name', $villa_id)";
+        if (mysqli_query($conn, $query)) {
+            $type_id = mysqli_insert_id($conn);
+            $_SESSION['success'] = "Room type added successfully!";
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
         } else {
-            $deleted_type = mysqli_fetch_assoc(mysqli_query($conn, "SELECT type_name FROM room_types WHERE id=$id AND villa_id=$villa_id"));
-            mysqli_query($conn, "DELETE FROM room_types WHERE id=$id AND villa_id=$villa_id");
-            $_SESSION['success'] = "Room type deleted.";
+            $_SESSION['error'] = "Error: " . mysqli_error($conn);
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit();
+        }
+    } elseif (isset($_POST['toggle_status'])) {
+        $id = (int)$_POST['id'];
+        $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM room_types WHERE id=$id AND villa_id=$villa_id"));
+        if ($item) {
+            $new_status = $item['is_active'] ? 0 : 1;
+            mysqli_query($conn, "UPDATE room_types SET is_active=$new_status WHERE id=$id AND villa_id=$villa_id");
+            $_SESSION['success'] = 'Room type status updated!';
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
@@ -85,6 +92,7 @@ include "../../includes/sidebar.php";
                                 <th>Type Name</th>
                                 <th class="text-center">Total Rooms</th>
                                 <th class="text-center">Available</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -109,14 +117,19 @@ include "../../includes/sidebar.php";
                                     </span>
                                 </td>
                                 <td>
+                                    <span class="badge badge-<?= $t['is_active'] ? 'success' : 'danger' ?>">
+                                        <?= $t['is_active'] ? 'Active' : 'Inactive' ?>
+                                    </span>
+                                </td>
+                                <td>
                                     <div class="action-btns">
                                         <a href="index.php?type_id=<?= $t['id'] ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> View Rooms
                                         </a>
-                                        <form method="POST" style="display:inline" onsubmit="return confirm('Delete this type?')">
+                                        <form method="POST" style="display:inline">
                                             <input type="hidden" name="id" value="<?= $t['id'] ?>">
-                                            <button type="submit" name="delete_type" class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-trash"></i>
+                                            <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $t['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $t['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
+                                                <i class="fas fa-<?= $t['is_active'] ? 'ban' : 'check' ?>"></i>
                                             </button>
                                         </form>
                                     </div>
