@@ -2,6 +2,10 @@
 require_once "../../includes/session.php";
 require_once "../../config/database.php";
 
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    verify_csrf_token();
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_profile"])) {
     $new_username = mysqli_real_escape_string($conn, $_POST["username"]);
     $uid = $_SESSION["user_id"];
@@ -58,6 +62,7 @@ include "../../includes/sidebar.php";
                 <div class="card-header"><h5><i class="bi bi-person-gear"></i> Update Profile</h5></div>
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Username</label>
                             <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($user["username"]) ?>" required>
@@ -86,6 +91,7 @@ include "../../includes/sidebar.php";
                 <div class="card-header"><h5><i class="bi bi-lock"></i> Change Password</h5></div>
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Current Password</label>
                             <input type="password" name="current_password" class="form-control" placeholder="Enter current password" required>

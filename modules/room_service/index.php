@@ -9,6 +9,7 @@ if (!has_role(['Admin', 'Receptionist', 'Manager'])) {
 
 // Handle edit / cancel POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $id = (int)$_POST['id'];
     $action = $_POST['action'] ?? '';
 
@@ -157,6 +158,7 @@ include '../../includes/sidebar.php';
                                             <i class="fas fa-pencil-alt"></i>
                                         </button>
                                         <form method="POST" style="display:inline" onsubmit="return confirm('Cancel this order? Stock will be restored.')">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="id" value="<?= $order['id'] ?>">
                                             <input type="hidden" name="action" value="cancel">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancel"><i class="fas fa-ban"></i></button>
@@ -181,6 +183,7 @@ include '../../includes/sidebar.php';
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <?= csrf_field() ?>
             <div class="modal-header">
                 <h5 class="modal-title">Edit Order</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

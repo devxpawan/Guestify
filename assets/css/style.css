@@ -896,22 +896,282 @@ body.toggled .top-navbar {
     background: linear-gradient(90deg, rgba(129, 140, 248, 0.05), transparent);
 }
 
-/* ── Responsive ── */
-@media (max-width: 768px) {
+/* ── Sidebar Overlay ── */
+.sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.28s ease, visibility 0.28s ease;
+        -webkit-tap-highlight-color: transparent;
+        backdrop-filter: blur(2px);
+        cursor: pointer;
+    }
+
+    body.toggled .sidebar-overlay {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+/* ── Desktop Sidebar (≥992px) ── */
+@media (min-width: 992px) {
+    .sidebar-overlay {
+        display: none !important;
+    }
+}
+
+/* ── Tablet & Mobile (≤991px) ── */
+@media (max-width: 991.98px) {
     #sidebar-wrapper {
         position: fixed;
         transform: translateX(-100%);
+        z-index: 1001;
     }
-    
+
     body.toggled #sidebar-wrapper {
         transform: translateX(0);
     }
-    
-    #page-content-wrapper, .top-navbar {
-        margin-left: 0;
+
+    #page-content-wrapper,
+    .top-navbar {
+        margin-left: 0 !important;
     }
-    
+
+    .sidebar-brand-logo img {
+        max-width: 120px;
+        height: 34px;
+    }
+
+    .sidebar-brand-name {
+        font-size: 0.85rem;
+    }
+}
+
+/* ── Small Desktop / Tablet (768px–1200px) ── */
+@media (max-width: 1199.98px) {
+    .stat-card .stat-value {
+        font-size: 1.4rem;
+    }
+
+    .stat-card .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+}
+
+/* ── Mobile (≤575px) ── */
+@media (max-width: 575.98px) {
+    .top-navbar {
+        padding: 0 0.6rem;
+        height: 60px;
+    }
+
+    .top-navbar .dropdown-toggle .text-start {
+        display: none;
+    }
+
+    .top-navbar .dropdown-toggle {
+        padding: 0.3rem 0.5rem;
+    }
+
+    .top-navbar .dropdown-toggle .rounded-circle {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .page-header {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .card-header {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .card-header h5 {
+        font-size: 0.85rem;
+    }
+
+    .card-body {
+        padding: 0.5rem 0.6rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    .table thead th {
+        font-size: 0.6rem;
+    }
+
     .stat-card {
-        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .stat-card .stat-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .action-btns {
+        gap: 0.2rem;
+    }
+
+    .action-btns .btn-sm {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.65rem;
+    }
+
+    .action-btns .btn-sm i {
+        font-size: 0.7rem;
+    }
+
+    .form-control,
+    .form-select {
+        padding: 0.45rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .form-label {
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .btn {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.7rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.45rem;
+        font-size: 0.7rem;
+    }
+
+    .badge {
+        font-size: 0.65rem;
+        padding: 0.3em 0.55em;
+    }
+
+    #page-content-wrapper {
+        padding: 0.75rem !important;
+    }
+
+    .empty-state {
+        padding: 2rem 0.5rem;
+    }
+
+    .empty-state i {
+        font-size: 2rem;
+    }
+
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .table-container .table-responsive {
+        border-radius: 0;
+    }
+
+    .sidebar-brand {
+        height: 60px;
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-brand-logo {
+        gap: 0.4rem;
+    }
+
+    .sidebar-brand-logo img {
+        max-width: 100px;
+        height: 30px;
+    }
+
+    .sidebar-brand-name {
+        font-size: 0.78rem;
+    }
+
+    .sidebar-nav {
+        padding: 0.25rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.6rem 0.75rem 0.3rem;
+        font-size: 0.55rem;
+    }
+
+    .sidebar-link {
+        padding: 0.4rem 0.7rem;
+        margin: 1px 0.5rem;
+        font-size: 0.76rem;
+    }
+
+    .sidebar-sublink {
+        padding: 0.35rem 0.7rem 0.35rem 2.4rem;
+        margin: 0 0.5rem;
+        font-size: 0.72rem;
+    }
+}
+
+/* ── Print Styles ── */
+@media print {
+    #sidebar-wrapper,
+    .top-navbar,
+    .sidebar-overlay,
+    .action-btns,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+
+    #page-content-wrapper,
+    body.toggled #page-content-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+
+    .table td,
+    .table th {
+        color: #000 !important;
     }
 }

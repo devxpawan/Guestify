@@ -6,6 +6,37 @@ $(document).ready(function () {
         $("body").toggleClass("toggled");
     });
 
+    // Close sidebar when overlay is clicked
+    $(document).on('click', '#sidebar-overlay', function() {
+        $("body").removeClass("toggled");
+    });
+
+    // Auto-close sidebar on nav link click (mobile)
+    $('.sidebar-link[data-page], .sidebar-sublink').on('click', function() {
+        if ($(window).width() < 992) {
+            $("body").removeClass("toggled");
+        }
+    });
+
+    // Close sidebar on Escape key
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $(window).width() < 992) {
+            $("body").removeClass("toggled");
+        }
+    });
+
+    // Touch swipe to close sidebar
+    var touchStartX = 0;
+    $('#sidebar-wrapper').on('touchstart', function(e) {
+        touchStartX = e.originalEvent.touches[0].clientX;
+    });
+    $('#sidebar-wrapper').on('touchend', function(e) {
+        var touchEndX = e.originalEvent.changedTouches[0].clientX;
+        if (touchStartX - touchEndX > 60) {
+            $("body").removeClass("toggled");
+        }
+    });
+
     // Sidebar active state
     var path = window.location.pathname;
 

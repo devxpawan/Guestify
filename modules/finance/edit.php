@@ -20,6 +20,7 @@ if (!$transaction) {
 $categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . active_villa_where_raw() . " ORDER BY type, name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $type = mysqli_real_escape_string($conn, $_POST['type']);
     $category_id = (int)$_POST['category_id'];
     $amount = (float)$_POST['amount'];
@@ -82,6 +83,7 @@ include '../../includes/sidebar.php';
     <div class="card">
         <div class="card-body">
             <form method="POST">
+                <?= csrf_field() ?>
                 <div class="mb-3">
                     <label class="form-label">Transaction Type</label>
                     <div class="d-flex gap-3">

@@ -9,6 +9,7 @@ if (!has_role(['Admin', 'Manager'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    verify_csrf_token();
     $id = (int)$_POST['id'];
     $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM staff WHERE id=$id AND " . active_villa_where_raw()));
     if ($item) {
@@ -152,6 +153,7 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
                         <td>
                             <div class="action-btns">
                                 <form method="POST" style="display:inline">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= $s['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $s['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $s['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                         <i class="fas fa-<?= $s['is_active'] ? 'ban' : 'check' ?>"></i>

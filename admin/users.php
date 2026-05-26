@@ -10,6 +10,7 @@ if (!has_role(['Admin'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     if (isset($_POST['toggle_status'])) {
         $uid = (int)$_POST['user_id'];
         if ($uid == $_SESSION['user_id']) {
@@ -234,6 +235,7 @@ include '../includes/sidebar.php';
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <?= csrf_field() ?>
             <div class="modal-header"><h5><i class="bi bi-pencil me-2"></i>Edit User</h5></div>
             <div class="modal-body">
                 <input type="hidden" name="user_id" id="edit_user_id">
@@ -280,6 +282,7 @@ include '../includes/sidebar.php';
 <div class="modal fade" id="toggleModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" class="modal-content">
+            <?= csrf_field() ?>
             <div class="modal-body text-center py-4">
                 <input type="hidden" name="user_id" id="toggle_user_id">
                 <input type="hidden" name="toggle_status" value="1">

@@ -6,6 +6,7 @@ require_once '../../includes/pagination.php';
 $vid = (int)active_villa_id();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    verify_csrf_token();
     if (!has_role(['Admin'])) {
         $_SESSION['error'] = 'Permission denied.';
         header("Location: index.php");
@@ -159,6 +160,7 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types WHERE villa_id=$vid O
                             <div class="action-btns">
                                 <?php if (has_role(['Admin'])): ?>
                                 <form method="POST" style="display:inline">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $row['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $row['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                         <i class="fas fa-<?= $row['is_active'] ? 'ban' : 'check' ?>"></i>

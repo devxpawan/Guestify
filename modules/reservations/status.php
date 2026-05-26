@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+verify_csrf_token();
+
 $new_status = mysqli_real_escape_string($conn, $_POST['status']);
 $villa_id = active_villa_id();
 

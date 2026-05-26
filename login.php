@@ -7,6 +7,7 @@ if (isset($_SESSION['user_id'])) {
 
 require_once 'config/database.php';
 require_once 'includes/villa_context.php';
+require_once 'includes/csrf.php';
 
 $branding = get_villa_branding();
 
@@ -16,6 +17,7 @@ $global_favicon = $branding['favicon_path'] ?? '';
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $username = mysqli_real_escape_string($conn, $_POST['username']);
     $password = $_POST['password'];
 
@@ -346,6 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="POST">
+            <?= csrf_field() ?>
             <div class="mb-3">
                 <label class="form-label">Username</label>
                 <input type="text" name="username" class="form-control" placeholder="Enter your username" required>

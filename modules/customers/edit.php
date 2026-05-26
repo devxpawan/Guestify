@@ -14,6 +14,7 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $nic_passport = mysqli_real_escape_string($conn, $_POST['nic_passport']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
@@ -68,6 +69,7 @@ include '../../includes/sidebar.php';
     <div class="card">
         <div class="card-body">
             <form method="POST">
+                <?= csrf_field() ?>
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
                     <input type="text" name="full_name" class="form-control" value="<?= htmlspecialchars($customer['full_name']) ?>" required>

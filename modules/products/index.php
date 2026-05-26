@@ -4,6 +4,7 @@ require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    verify_csrf_token();
     if (!has_role(['Admin', 'Manager'])) {
         $_SESSION['error'] = 'Permission denied.';
         header("Location: index.php");
@@ -153,6 +154,7 @@ $categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM
                         <td>
                             <div class="action-btns">
                                 <form method="POST" style="display:inline">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $p['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $p['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                         <i class="fas fa-<?= $p['is_active'] ? 'ban' : 'check' ?>"></i>

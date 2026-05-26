@@ -24,6 +24,7 @@ $error = '';
 $success = '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        verify_csrf_token();
         $room_number = mysqli_real_escape_string($conn, $_POST['room_number']);
         $room_type_id = (int)$_POST['room_type_id'];
         $capacity = (int)$_POST['capacity'];
@@ -114,6 +115,7 @@ include '../../includes/sidebar.php';
     <div class="card">
         <div class="card-body">
             <form method="POST" enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <div class="row">
                     <div class="col-md-8">
                         <div class="mb-3">

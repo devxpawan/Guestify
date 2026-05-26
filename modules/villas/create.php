@@ -8,6 +8,7 @@ if (!has_role(['Admin'])) {
 }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $name = mysqli_real_escape_string($conn, trim($_POST['name']));
     $company_email = mysqli_real_escape_string($conn, trim($_POST['company_email']));
     $currency_symbol = mysqli_real_escape_string($conn, trim($_POST['currency_symbol']));
@@ -95,6 +96,7 @@ include '../../includes/sidebar.php';
         </div>
         <div class="card-body">
             <form method="POST" enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Villa Name <span class="text-danger">*</span></label>

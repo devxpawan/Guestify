@@ -11,6 +11,7 @@ if (!has_role(['Admin', 'Manager'])) {
 
 // Handle add/edit/delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     if (isset($_POST['add_category'])) {
         $name = mysqli_real_escape_string($conn, trim($_POST['name']));
         $type = mysqli_real_escape_string($conn, $_POST['type']);
@@ -81,6 +82,7 @@ include '../../includes/sidebar.php';
                 <div class="card-body">
                     <h5 class="card-title">Add Category</h5>
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Name</label>
                             <input type="text" name="name" class="form-control" required>
@@ -122,6 +124,7 @@ include '../../includes/sidebar.php';
                                                 <i class="fas fa-pencil-alt"></i>
                                             </button>
                                             <form method="POST" style="display:inline" onsubmit="return confirm('Delete this category?')">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="id" value="<?= $cat['id'] ?>">
                                                 <button type="submit" name="delete_category" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                                             </form>
@@ -142,6 +145,7 @@ include '../../includes/sidebar.php';
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <?= csrf_field() ?>
             <div class="modal-header">
                 <h5 class="modal-title">Edit Category</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

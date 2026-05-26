@@ -155,3 +155,4 @@
             <?php endif; ?>
         </nav>
     </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>

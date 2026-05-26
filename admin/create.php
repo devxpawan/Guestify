@@ -10,6 +10,7 @@ if (!has_role(['Admin'])) {
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
+    verify_csrf_token();
     $username = mysqli_real_escape_string($conn, $_POST['username']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $role_id = (int)$_POST['role_id'];
@@ -63,6 +64,7 @@ include '../includes/sidebar.php';
         <div class="card-header"><h5><i class="fas fa-user-plus"></i> User Details</h5></div>
         <div class="card-body">
             <form method="POST" class="row g-3">
+                <?= csrf_field() ?>
                 <div class="col-md-4">
                     <label class="form-label">Username</label>
                     <input type="text" name="username" class="form-control" placeholder="Enter username" required autofocus>

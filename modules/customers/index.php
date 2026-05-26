@@ -4,6 +4,7 @@ require_once '../../config/database.php';
 require_once '../../includes/pagination.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    verify_csrf_token();
     $id = (int)$_POST['id'];
     $item = mysqli_fetch_assoc(mysqli_query($conn, "SELECT is_active FROM customers WHERE id=$id AND " . active_villa_where()));
     if ($item) {
@@ -127,6 +128,7 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
                         <td>
                             <div class="action-btns">
                                 <form method="POST" style="display:inline">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= $c['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $c['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $c['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                         <i class="fas fa-<?= $c['is_active'] ? 'ban' : 'check' ?>"></i>

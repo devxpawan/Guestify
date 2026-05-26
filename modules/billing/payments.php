@@ -17,6 +17,7 @@ $id = (int)$_GET['id'];
 
 // --- POST HANDLER ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
 $invoice = mysqli_fetch_assoc(mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_name, rm.room_number
                                                    FROM invoices i 
                                                    JOIN reservations r ON i.reservation_id = r.id 
@@ -129,6 +130,7 @@ include '../../includes/sidebar.php';
                 <div class="card-header"><h5><i class="bi bi-plus-circle"></i> Record New Payment</h5></div>
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Amount</label>
                             <div class="input-group">

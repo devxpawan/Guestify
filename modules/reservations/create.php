@@ -12,6 +12,7 @@ $villa_id = active_villa_id();
 $room_types = mysqli_query($conn, "SELECT * FROM room_types ORDER BY type_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $nic_passport = mysqli_real_escape_string($conn, $_POST['nic_passport']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
@@ -134,6 +135,7 @@ include '../../includes/sidebar.php';
         <div class="card-header"><h5><i class="fas fa-calendar-check"></i> Reservation Details</h5></div>
         <div class="card-body">
             <form method="POST">
+                <?= csrf_field() ?>
                 <!-- Customer Information -->
                 <div class="mb-4">
                     <h6 class="text-muted mb-3"><i class="fas fa-user me-1"></i> Customer Information</h6>

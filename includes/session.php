@@ -12,6 +12,9 @@ $base_url = str_repeat('../', $depth);
 if ($depth == 0) $base_url = './';
 $normalized_path = '/' . ltrim(str_replace(DIRECTORY_SEPARATOR, '/', $relative_path), '/');
 
+// Load CSRF protection
+require_once __DIR__ . '/csrf.php';
+
 if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'login.php') {
     header('Location: ' . $base_url . 'login.php');
     exit();

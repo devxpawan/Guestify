@@ -39,6 +39,7 @@ $current_room = mysqli_fetch_assoc(mysqli_query($conn, "SELECT room_type_id FROM
 $current_room_type_id = $current_room ? (int)$current_room['room_type_id'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
     $nic_passport = mysqli_real_escape_string($conn, $_POST['nic_passport']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
@@ -215,6 +216,7 @@ if ($is_group) {
     <div class="card shadow-sm">
         <div class="card-body">
             <form method="POST">
+                <?= csrf_field() ?>
                 <!-- Customer Information -->
                 <h6 class="text-muted mb-3"><i class="fas fa-user me-1"></i> Customer Information</h6>
                 <div class="row mb-4">

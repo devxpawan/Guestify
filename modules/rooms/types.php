@@ -17,6 +17,7 @@ if (!has_role(['Admin'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     if (isset($_POST['add_type'])) {
         $type_name = mysqli_real_escape_string($conn, $_POST['type_name']);
         if (empty($type_name)) {
@@ -72,6 +73,7 @@ include "../../includes/sidebar.php";
                 <div class="card-header"><h5><i class="bi bi-plus-circle"></i> Add New Type</h5></div>
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Type Name</label>
                             <input type="text" name="type_name" class="form-control" required placeholder="e.g. Penthouse, Deluxe, Suite">
@@ -127,6 +129,7 @@ include "../../includes/sidebar.php";
                                             <i class="bi bi-eye"></i> View Rooms
                                         </a>
                                         <form method="POST" style="display:inline">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="id" value="<?= $t['id'] ?>">
                                             <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $t['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $t['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                                 <i class="fas fa-<?= $t['is_active'] ? 'ban' : 'check' ?>"></i>

@@ -8,6 +8,7 @@ if (!has_role(['Admin'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $user_id = (int)$_POST['user_id'];
     $villa_id = (int)$_POST['villa_id'];
 

@@ -9,6 +9,7 @@ if (!has_role(['Admin', 'Manager', 'Cashier'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
+    verify_csrf_token();
     $id = (int)$_POST['id'];
     $transaction = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM transactions WHERE id=$id AND " . active_villa_where_raw()));
     if ($transaction) {

@@ -17,6 +17,7 @@ try {
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     if (isset($_POST['add'])) {
         $name = mysqli_real_escape_string($conn, trim($_POST['category_name']));
         if (empty($name)) {
@@ -81,6 +82,7 @@ include '../../includes/sidebar.php';
                 <div class="card-header"><h5><i class="fas fa-plus"></i> Add New Category</h5></div>
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Category Name</label>
                             <input type="text" name="category_name" class="form-control" placeholder="e.g. Beverages" required autofocus>
@@ -113,6 +115,7 @@ include '../../includes/sidebar.php';
                                         <div class="action-btns">
                                             <button class="btn btn-sm btn-outline-warning" onclick="editCategory(<?= $c['id'] ?>, '<?= htmlspecialchars($c['category_name']) ?>')"><i class="fas fa-pencil-alt"></i></button>
                                             <form method="POST" style="display:inline">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="id" value="<?= $c['id'] ?>">
                                                 <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $c['is_active'] ? 'outline-warning' : 'outline-success' ?>" title="<?= $c['is_active'] ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                                     <i class="fas fa-<?= $c['is_active'] ? 'ban' : 'check' ?>"></i>
@@ -134,6 +137,7 @@ include '../../includes/sidebar.php';
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <?= csrf_field() ?>
             <div class="modal-header"><h5><i class="fas fa-pencil-alt me-2"></i>Edit Category</h5></div>
             <div class="modal-body">
                 <input type="hidden" name="id" id="edit_id">

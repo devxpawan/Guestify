@@ -8,6 +8,7 @@ if (!has_role(['Admin', 'Manager'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     if (isset($_POST['add'])) {
         $name = mysqli_real_escape_string($conn, trim($_POST['position_name']));
         if (empty($name)) {
@@ -71,6 +72,7 @@ include '../../includes/sidebar.php';
                 <div class="card-header"><h5><i class="fas fa-plus"></i> Add New Position</h5></div>
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Position Name</label>
                             <input type="text" name="position_name" class="form-control" placeholder="e.g. Manager" required autofocus>
@@ -98,6 +100,7 @@ include '../../includes/sidebar.php';
                                         <div class="action-btns">
                                             <button class="btn btn-sm btn-outline-warning" onclick="editPosition(<?= $p['id'] ?>, '<?= htmlspecialchars($p['position_name']) ?>')"><i class="fas fa-pencil-alt"></i></button>
                                             <form method="POST" style="display:inline" onsubmit="return confirm('Delete this position?')">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                                 <button type="submit" name="delete" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                                             </form>
@@ -117,6 +120,7 @@ include '../../includes/sidebar.php';
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" class="modal-content">
+            <?= csrf_field() ?>
             <div class="modal-header"><h5><i class="fas fa-pencil-alt me-2"></i>Edit Position</h5></div>
             <div class="modal-body">
                 <input type="hidden" name="id" id="edit_id">

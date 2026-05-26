@@ -24,6 +24,7 @@ if (!$order) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'cancel') {
@@ -97,6 +98,7 @@ include '../../includes/sidebar.php';
             <div class="card shadow-sm">
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Product</label>
                             <select name="product_id" class="form-control" required>
@@ -129,6 +131,7 @@ include '../../includes/sidebar.php';
                     <?php if ($order['status'] !== 'Cancelled'): ?>
                     <hr>
                     <form method="POST" onsubmit="return confirm('Cancel this order? Stock will be restored.');">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="action" value="cancel">
                         <button type="submit" class="btn btn-outline-danger"><i class="fas fa-ban"></i> Cancel Entire Order</button>
                     </form>

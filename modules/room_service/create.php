@@ -25,6 +25,7 @@ if (!$res) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $product_id = (int)$_POST['product_id'];
     $quantity = (int)$_POST['quantity'];
 
@@ -78,6 +79,7 @@ include '../../includes/sidebar.php';
             <div class="card shadow-sm">
                 <div class="card-body">
                     <form method="POST">
+                        <?= csrf_field() ?>
                         <div class="mb-3">
                             <label class="form-label">Select Product / Food</label>
                             <select name="product_id" class="form-control" required>

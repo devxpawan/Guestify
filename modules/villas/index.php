@@ -10,6 +10,7 @@ if (!has_role(['Admin'])) {
 
 // Toggle villa status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
+    verify_csrf_token();
     $id = (int)$_POST['id'];
     if ($id === active_villa_id()) {
         $_SESSION['error'] = 'You cannot deactivate the villa you are currently logged into.';
@@ -120,6 +121,7 @@ $villas = mysqli_query($conn, "SELECT v.*, (SELECT COUNT(*) FROM rooms WHERE vil
                                 <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit" style="width: 36px;"><i class="fas fa-pencil-alt"></i></a>
                                 <?php if ($row['id'] != active_villa_id()): ?>
                                 <form method="POST" style="display:inline">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                     <button type="submit" name="toggle_status" class="btn btn-sm btn-<?= $row['status'] === 'Active' ? 'outline-warning' : 'outline-success' ?>" title="<?= $row['status'] === 'Active' ? 'Deactivate' : 'Activate' ?>" style="width: 36px;">
                                         <i class="fas fa-<?= $row['status'] === 'Active' ? 'ban' : 'check' ?>"></i>

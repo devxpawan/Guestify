@@ -168,6 +168,7 @@ ORDER BY gid DESC LIMIT $offset, $per_page");
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Pending'): ?>
                                 <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Confirm reservation?');">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="gid" value="<?= $r['gid'] ?>">
                                     <input type="hidden" name="status" value="Confirmed">
                                     <button type="submit" class="btn btn-sm btn-success" title="Confirm"><i class="fas fa-check-circle"></i></button>
@@ -175,6 +176,7 @@ ORDER BY gid DESC LIMIT $offset, $per_page");
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Confirmed'): ?>
                                 <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Check-In guest?');">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="gid" value="<?= $r['gid'] ?>">
                                     <input type="hidden" name="status" value="Checked-In">
                                     <button type="submit" class="btn btn-sm btn-info" title="Check-In"><i class="fas fa-sign-in-alt"></i></button>
@@ -182,6 +184,7 @@ ORDER BY gid DESC LIMIT $offset, $per_page");
                                 <?php endif; ?>
                                 <?php if ($r['status'] == 'Checked-In'): ?>
                                 <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Check-Out guest?');">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="gid" value="<?= $r['gid'] ?>">
                                     <input type="hidden" name="status" value="Checked-Out">
                                     <button type="submit" class="btn btn-sm btn-secondary" title="Check-Out"><i class="fas fa-sign-out-alt"></i></button>
@@ -189,6 +192,7 @@ ORDER BY gid DESC LIMIT $offset, $per_page");
                                 <?php endif; ?>
                                 <?php if ($r['status'] != 'Cancelled' && $r['status'] != 'Checked-Out'): ?>
                                 <form method="POST" action="status.php" class="d-inline" onsubmit="return confirm('Cancel reservation? This will free up the room(s).');">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="gid" value="<?= $r['gid'] ?>">
                                     <input type="hidden" name="status" value="Cancelled">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancel"><i class="fas fa-times-circle"></i></button>
