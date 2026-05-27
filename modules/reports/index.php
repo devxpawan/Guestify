@@ -85,8 +85,8 @@ include '../../includes/sidebar.php';
                     <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($date_to) ?>">
                 </div>
                 <div class="col-md-4 d-flex gap-2 align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Generate Report</button>
-                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Today"><i class="bi bi-calendar-day"></i></a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Generate Report</button>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Today"><i class="bi bi-calendar-day"></i></a>
                 </div>
             </form>
         </div>

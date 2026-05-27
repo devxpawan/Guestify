@@ -111,7 +111,7 @@ $types_res = mysqli_query($conn, "SELECT * FROM room_types WHERE villa_id=$vid O
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($search || $type_id || $status || $is_active_filter !== ''): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>

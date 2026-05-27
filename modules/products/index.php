@@ -110,9 +110,9 @@ $categories_res = mysqli_query($conn, "SELECT id, category_name AS category FROM
                     </select>
                 </div>
                 <div class="col-12 d-flex gap-2 mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($search || $category || $is_active_filter !== '' || $date_from || $date_to): ?>
-                    <a href="index.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Clear</a>
+                    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Clear</a>
                     <?php endif; ?>
                 </div>
             </form>

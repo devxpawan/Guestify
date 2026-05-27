@@ -111,9 +111,9 @@ $positions_res = mysqli_query($conn, "SELECT id, position_name AS position FROM 
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2 align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($search || $position || $is_active_filter !== '' || $date_from || $date_to): ?>
-                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>

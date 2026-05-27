@@ -174,9 +174,9 @@ include '../includes/sidebar.php';
                     <input type="text" name="search" class="form-control form-control-sm" placeholder="Description..." value="<?= htmlspecialchars($search) ?>">
                 </div>
                 <div class="col-12 d-flex gap-2 mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($date_from || $date_to || $filter_module || $filter_action || $filter_user || $search): ?>
-                    <a href="audit_logs.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Clear</a>
+                    <a href="audit_logs.php" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Clear</a>
                     <?php endif; ?>
                 </div>
             </form>

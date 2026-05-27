@@ -87,9 +87,9 @@ $invoices = mysqli_query($conn, "SELECT i.*, r.check_in, r.check_out, c.full_nam
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2 align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($search || $status || $date_from || $date_to): ?>
-                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>

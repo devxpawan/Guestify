@@ -181,7 +181,7 @@ $categories = mysqli_query($conn, "SELECT * FROM finance_categories WHERE " . ac
                     <input type="date" name="date_to" class="form-control" value="<?= htmlspecialchars($date_to) ?>" placeholder="To">
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($type_filter || $category_filter || $date_from || $date_to): ?>
                     <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>

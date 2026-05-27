@@ -98,9 +98,9 @@ ORDER BY gid DESC LIMIT $offset, $per_page");
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2 align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                     <?php if ($search || $status || $date_from || $date_to): ?>
-                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>

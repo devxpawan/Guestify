@@ -88,9 +88,9 @@ $customers = mysqli_query($conn, "SELECT * FROM customers $where ORDER BY id DES
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-search"></i> Filter</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filter</button>
                     <?php if ($search || $is_active_filter !== '' || $date_from || $date_to): ?>
-                    <a href="index.php" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                    <a href="index.php" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
                     <?php endif; ?>
                 </div>
             </form>
