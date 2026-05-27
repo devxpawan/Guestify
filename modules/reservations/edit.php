@@ -65,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $check_in = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_in']));
     $check_out = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_out']));
     $status = mysqli_real_escape_string($conn, $_POST['status']);
+    $discount = (float)($_POST['discount'] ?? 0);
+    if ($discount < 0) $discount = 0;
 
     if (strtotime($check_out) <= strtotime($check_in)) {
         $_SESSION['error'] = 'Check-out must be after check-in!';
@@ -167,10 +169,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $all_str = implode(',', $all_ids);
         if (!$is_group) {
             $uq = "UPDATE reservations SET customer_id={$res['customer_id']}, room_id=$room_id, booking_type='$booking_type', check_in='$check_in', 
-                   check_out='$check_out', status='$status' WHERE id IN ($all_str) AND villa_id = $villa_id";
+                   check_out='$check_out', discount=$discount, status='$status' WHERE id IN ($all_str) AND villa_id = $villa_id";
         } else {
             $uq = "UPDATE reservations SET customer_id={$res['customer_id']}, booking_type='$booking_type', check_in='$check_in', 
-                   check_out='$check_out', status='$status' WHERE id IN ($all_str) AND villa_id = $villa_id";
+                   check_out='$check_out', discount=$discount, status='$status' WHERE id IN ($all_str) AND villa_id = $villa_id";
         }
         mysqli_query($conn, $uq);
 
@@ -355,15 +357,21 @@ if ($is_group) {
                 <?php endif; ?>
 
                 <!-- Status -->
-                <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Discount (<?= htmlspecialchars($global_currency) ?>)</label>
+                        <input type="number" name="discount" class="form-control" value="<?= htmlspecialchars($res['discount'] ?? '0') ?>" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
                         <option value="Pending" <?= $res['status'] == 'Pending' ? 'selected' : '' ?>>Pending</option>
                         <option value="Confirmed" <?= $res['status'] == 'Confirmed' ? 'selected' : '' ?>>Confirmed</option>
                         <option value="Checked-In" <?= $res['status'] == 'Checked-In' ? 'selected' : '' ?>>Checked-In</option>
                         <option value="Checked-Out" <?= $res['status'] == 'Checked-Out' ? 'selected' : '' ?>>Checked-Out</option>
                         <option value="Cancelled" <?= $res['status'] == 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
                     </select>
+                    </div>
                 </div>
 
                 <div class="d-flex gap-2">
@@ -378,6 +386,21 @@ if ($is_group) {
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
 $(document).ready(function() {
+    const checkInInput = $('input[name="check_in"]');
+    const checkOutInput = $('input[name="check_out"]');
+
+    function updateCheckOutMin() {
+        const checkIn = checkInInput.val();
+        if (checkIn) {
+            checkOutInput.attr('min', checkIn);
+        } else {
+            checkOutInput.removeAttr('min');
+        }
+    }
+
+    checkInInput.on('change', updateCheckOutMin);
+    updateCheckOutMin();
+
     <?php if ($is_group): ?>
     // Group room addition: room type -> checkboxes
     const checkInInput = $('input[name="check_in"]');

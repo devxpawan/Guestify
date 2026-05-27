@@ -98,6 +98,7 @@ if ($new_status == 'Checked-Out') {
             'price' => $price,
             'room_charges' => $room_charges,
             'product_charges' => $product_charges,
+            'discount' => (float)($res_billing['discount'] ?? 0),
             'so_list' => $so_list
         ];
     }
@@ -106,7 +107,9 @@ if ($new_status == 'Checked-Out') {
         // --- Combined invoice for the whole group ---
         $group_room_total = array_sum(array_column($room_billing, 'room_charges'));
         $group_product_total = array_sum(array_column($room_billing, 'product_charges'));
-        $grand_total = $group_room_total + $group_product_total;
+        $group_discount = array_sum(array_column($room_billing, 'discount'));
+        $grand_total = $group_room_total + $group_product_total - $group_discount;
+        if ($grand_total < 0) $grand_total = 0;
 
         // Find or create group invoice
         $existing = mysqli_query($conn, "SELECT id FROM invoices WHERE group_id = $gid");
@@ -117,7 +120,7 @@ if ($new_status == 'Checked-Out') {
         } else {
             $first_res_id = $room_billing[0]['id'];
             mysqli_query($conn, "INSERT INTO invoices (reservation_id, group_id, room_charges, product_charges, discount, grand_total, payment_status, villa_id)
-                                 VALUES ($first_res_id, $gid, $group_room_total, $group_product_total, 0, $grand_total, 'Unpaid', $villa_id)");
+                                 VALUES ($first_res_id, $gid, $group_room_total, $group_product_total, $group_discount, $grand_total, 'Unpaid', $villa_id)");
             $invoice_id = mysqli_insert_id($conn);
         }
 
@@ -135,11 +138,13 @@ if ($new_status == 'Checked-Out') {
         }
 
         // Update invoice totals
-        mysqli_query($conn, "UPDATE invoices SET room_charges = $group_room_total, product_charges = $group_product_total, grand_total = $grand_total WHERE id = $invoice_id");
+        mysqli_query($conn, "UPDATE invoices SET room_charges = $group_room_total, product_charges = $group_product_total, discount = $group_discount, grand_total = $grand_total WHERE id = $invoice_id");
     } else {
         // --- Per-room invoice (single reservation) ---
         foreach ($room_billing as $rb) {
-            $grand_total = $rb['room_charges'] + $rb['product_charges'];
+            $discount = $rb['discount'];
+            $grand_total = $rb['room_charges'] + $rb['product_charges'] - $discount;
+            if ($grand_total < 0) $grand_total = 0;
 
             $existing = mysqli_query($conn, "SELECT id FROM invoices WHERE reservation_id = {$rb['id']}");
             $inv_row = $existing ? mysqli_fetch_assoc($existing) : null;
@@ -148,7 +153,7 @@ if ($new_status == 'Checked-Out') {
                 mysqli_query($conn, "DELETE FROM invoice_items WHERE invoice_id = $invoice_id");
             } else {
                 mysqli_query($conn, "INSERT INTO invoices (reservation_id, group_id, room_charges, product_charges, discount, grand_total, payment_status, villa_id)
-                                     VALUES ({$rb['id']}, NULL, {$rb['room_charges']}, {$rb['product_charges']}, 0, $grand_total, 'Unpaid', $villa_id)");
+                                     VALUES ({$rb['id']}, NULL, {$rb['room_charges']}, {$rb['product_charges']}, $discount, $grand_total, 'Unpaid', $villa_id)");
                 $invoice_id = mysqli_insert_id($conn);
             }
 
@@ -162,7 +167,7 @@ if ($new_status == 'Checked-Out') {
                                      VALUES ($invoice_id, 'Product', 'RS: {$so['product_name']}', {$so['quantity']}, {$so['price']}, $total, $villa_id)");
             }
 
-            mysqli_query($conn, "UPDATE invoices SET room_charges = {$rb['room_charges']}, product_charges = {$rb['product_charges']}, grand_total = $grand_total WHERE id = $invoice_id");
+            mysqli_query($conn, "UPDATE invoices SET room_charges = {$rb['room_charges']}, product_charges = {$rb['product_charges']}, discount = $discount, grand_total = $grand_total WHERE id = $invoice_id");
         }
     }
 }

@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $check_out = str_replace('T', ' ', mysqli_real_escape_string($conn, $_POST['check_out']));
     $adults = (int)$_POST['adults'];
     $children = (int)$_POST['children'];
+    $discount = (float)($_POST['discount'] ?? 0);
+    if ($discount < 0) $discount = 0;
 
     $validation_error = null;
 
@@ -74,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
 
-            $query = "INSERT INTO reservations (group_id, customer_id, room_id, booking_type, check_in, check_out, adults, children, status, villa_id) 
-                      VALUES (NULL, $customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, 'Pending', $villa_id)";
+            $query = "INSERT INTO reservations (group_id, customer_id, room_id, booking_type, check_in, check_out, adults, children, discount, status, villa_id) 
+                      VALUES (NULL, $customer_id, $room_id, '$booking_type', '$check_in', '$check_out', $adults, $children, " . ($first_id === null ? $discount : 0) . ", 'Pending', $villa_id)";
             if (mysqli_query($conn, $query)) {
                 $reservation_id = mysqli_insert_id($conn);
                 if ($first_id === null) {
@@ -192,7 +194,11 @@ include '../../includes/sidebar.php';
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Discount (<?= htmlspecialchars($global_currency) ?>)</label>
+                        <input type="number" name="discount" class="form-control" value="<?= htmlspecialchars($_POST['discount'] ?? '0') ?>" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Room Type <small class="text-muted">(optional filter)</small></label>
                         <select name="room_type_id" id="roomTypeId" class="form-select" disabled>
                             <option value="">All Types</option>
@@ -228,6 +234,20 @@ $(document).ready(function() {
     const bookingTypeSelect = $('#bookingType');
     const roomTypeSelect = $('#roomTypeId');
     const roomCheckboxes = $('#roomCheckboxes');
+
+    // Prevent selecting past dates for check-in
+    const now = new Date();
+    const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    checkInInput.attr('min', localNow);
+
+    function updateCheckOutMin() {
+        const checkIn = checkInInput.val();
+        if (checkIn) {
+            checkOutInput.attr('min', checkIn);
+        } else {
+            checkOutInput.removeAttr('min');
+        }
+    }
 
     function updateRoomTypeSelector() {
         const checkIn = checkInInput.val();
@@ -308,7 +328,10 @@ $(document).ready(function() {
         });
     }
 
-    checkInInput.on('change', updateRoomTypeSelector);
+    checkInInput.on('change', function() {
+        updateCheckOutMin();
+        updateRoomTypeSelector();
+    });
     checkOutInput.on('change', updateRoomTypeSelector);
     bookingTypeSelect.on('change', fetchAvailableRooms);
     roomTypeSelect.on('change', fetchAvailableRooms);
